@@ -1,0 +1,1820 @@
+NNNN            ,0
+NNN N           ,1
+NNN  N          ,1
+NNN   N         ,1
+NNN    N        ,1
+NNN     N       ,1
+NNN      N      ,1
+NNN       N     ,1
+NNN        N    ,1
+NNN         N   ,2
+NNN          N  ,2
+NNN           N ,2
+NNN            N,2
+NN NN           ,1
+NN N N          ,1
+NN N  N         ,1
+NN N   N        ,1
+NN N    N       ,1
+NN N     N      ,1
+NN N      N     ,1
+NN N       N    ,1
+NN N        N   ,2
+NN N         N  ,2
+NN N          N ,2
+NN N           N,2
+NN  NN          ,2
+NN  N N         ,2
+NN  N  N        ,2
+NN  N   N       ,2
+NN  N    N      ,2
+NN  N     N     ,2
+NN  N      N    ,2
+NN  N       N   ,3
+NN  N        N  ,3
+NN  N         N ,3
+NN  N          N,3
+NN   NN         ,2
+NN   N N        ,2
+NN   N  N       ,2
+NN   N   N      ,2
+NN   N    N     ,2
+NN   N     N    ,2
+NN   N      N   ,3
+NN   N       N  ,3
+NN   N        N ,3
+NN   N         N,3
+NN    NN        ,2
+NN    N N       ,2
+NN    N  N      ,2
+NN    N   N     ,2
+NN    N    N    ,2
+NN    N     N   ,3
+NN    N      N  ,3
+NN    N       N ,3
+NN    N        N,3
+NN     NN       ,2
+NN     N N      ,2
+NN     N  N     ,2
+NN     N   N    ,2
+NN     N    N   ,3
+NN     N     N  ,3
+NN     N      N ,3
+NN     N       N,3
+NN      NN      ,2
+NN      N N     ,2
+NN      N  N    ,2
+NN      N   N   ,3
+NN      N    N  ,3
+NN      N     N ,3
+NN      N      N,3
+NN       NN     ,2
+NN       N N    ,2
+NN       N  N   ,3
+NN       N   N  ,3
+NN       N    N ,3
+NN       N     N,3
+NN        NN    ,2
+NN        N N   ,3
+NN        N  N  ,3
+NN        N   N ,3
+NN        N    N,3
+NN         NN   ,3
+NN         N N  ,3
+NN         N  N ,3
+NN         N   N,3
+NN          NN  ,4
+NN          N N ,4
+NN          N  N,4
+NN           NN ,4
+NN           N N,4
+NN            NN,4
+N NNN           ,1
+N NN N          ,1
+N NN  N         ,1
+N NN   N        ,1
+N NN    N       ,1
+N NN     N      ,1
+N NN      N     ,1
+N NN       N    ,1
+N NN        N   ,2
+N NN         N  ,2
+N NN          N ,2
+N NN           N,2
+N N NN          ,2
+N N N N         ,2
+N N N  N        ,2
+N N N   N       ,2
+N N N    N      ,2
+N N N     N     ,2
+N N N      N    ,2
+N N N       N   ,3
+N N N        N  ,3
+N N N         N ,3
+N N N          N,3
+N N  NN         ,2
+N N  N N        ,2
+N N  N  N       ,2
+N N  N   N      ,2
+N N  N    N     ,2
+N N  N     N    ,2
+N N  N      N   ,3
+N N  N       N  ,3
+N N  N        N ,3
+N N  N         N,3
+N N   NN        ,2
+N N   N N       ,2
+N N   N  N      ,2
+N N   N   N     ,2
+N N   N    N    ,2
+N N   N     N   ,3
+N N   N      N  ,3
+N N   N       N ,3
+N N   N        N,3
+N N    NN       ,2
+N N    N N      ,2
+N N    N  N     ,2
+N N    N   N    ,2
+N N    N    N   ,3
+N N    N     N  ,3
+N N    N      N ,3
+N N    N       N,3
+N N     NN      ,2
+N N     N N     ,2
+N N     N  N    ,2
+N N     N   N   ,3
+N N     N    N  ,3
+N N     N     N ,3
+N N     N      N,3
+N N      NN     ,2
+N N      N N    ,2
+N N      N  N   ,3
+N N      N   N  ,3
+N N      N    N ,3
+N N      N     N,3
+N N       NN    ,2
+N N       N N   ,3
+N N       N  N  ,3
+N N       N   N ,3
+N N       N    N,3
+N N        NN   ,3
+N N        N N  ,3
+N N        N  N ,3
+N N        N   N,3
+N N         NN  ,4
+N N         N N ,4
+N N         N  N,4
+N N          NN ,4
+N N          N N,4
+N N           NN,4
+N  NNN          ,2
+N  NN N         ,2
+N  NN  N        ,2
+N  NN   N       ,2
+N  NN    N      ,2
+N  NN     N     ,2
+N  NN      N    ,2
+N  NN       N   ,3
+N  NN        N  ,3
+N  NN         N ,3
+N  NN          N,3
+N  N NN         ,2
+N  N N N        ,2
+N  N N  N       ,2
+N  N N   N      ,2
+N  N N    N     ,2
+N  N N     N    ,2
+N  N N      N   ,3
+N  N N       N  ,3
+N  N N        N ,3
+N  N N         N,3
+N  N  NN        ,2
+N  N  N N       ,2
+N  N  N  N      ,2
+N  N  N   N     ,2
+N  N  N    N    ,2
+N  N  N     N   ,3
+N  N  N      N  ,3
+N  N  N       N ,3
+N  N  N        N,3
+N  N   NN       ,2
+N  N   N N      ,2
+N  N   N  N     ,2
+N  N   N   N    ,2
+N  N   N    N   ,3
+N  N   N     N  ,3
+N  N   N      N ,3
+N  N   N       N,3
+N  N    NN      ,2
+N  N    N N     ,2
+N  N    N  N    ,2
+N  N    N   N   ,3
+N  N    N    N  ,3
+N  N    N     N ,3
+N  N    N      N,3
+N  N     NN     ,2
+N  N     N N    ,2
+N  N     N  N   ,3
+N  N     N   N  ,3
+N  N     N    N ,3
+N  N     N     N,3
+N  N      NN    ,2
+N  N      N N   ,3
+N  N      N  N  ,3
+N  N      N   N ,3
+N  N      N    N,3
+N  N       NN   ,3
+N  N       N N  ,3
+N  N       N  N ,3
+N  N       N   N,3
+N  N        NN  ,4
+N  N        N N ,4
+N  N        N  N,4
+N  N         NN ,4
+N  N         N N,4
+N  N          NN,4
+N   NNN         ,3
+N   NN N        ,3
+N   NN  N       ,3
+N   NN   N      ,3
+N   NN    N     ,3
+N   NN     N    ,3
+N   NN      N   ,4
+N   NN       N  ,4
+N   NN        N ,4
+N   NN         N,4
+N   N NN        ,3
+N   N N N       ,3
+N   N N  N      ,3
+N   N N   N     ,3
+N   N N    N    ,3
+N   N N     N   ,4
+N   N N      N  ,4
+N   N N       N ,4
+N   N N        N,4
+N   N  NN       ,3
+N   N  N N      ,3
+N   N  N  N     ,3
+N   N  N   N    ,3
+N   N  N    N   ,4
+N   N  N     N  ,4
+N   N  N      N ,4
+N   N  N       N,4
+N   N   NN      ,3
+N   N   N N     ,3
+N   N   N  N    ,3
+N   N   N   N   ,4
+N   N   N    N  ,4
+N   N   N     N ,4
+N   N   N      N,4
+N   N    NN     ,3
+N   N    N N    ,3
+N   N    N  N   ,4
+N   N    N   N  ,4
+N   N    N    N ,4
+N   N    N     N,4
+N   N     NN    ,3
+N   N     N N   ,4
+N   N     N  N  ,4
+N   N     N   N ,4
+N   N     N    N,4
+N   N      NN   ,4
+N   N      N N  ,4
+N   N      N  N ,4
+N   N      N   N,4
+N   N       NN  ,5
+N   N       N N ,5
+N   N       N  N,5
+N   N        NN ,5
+N   N        N N,5
+N   N         NN,5
+N    NNN        ,3
+N    NN N       ,3
+N    NN  N      ,3
+N    NN   N     ,3
+N    NN    N    ,3
+N    NN     N   ,4
+N    NN      N  ,4
+N    NN       N ,4
+N    NN        N,4
+N    N NN       ,3
+N    N N N      ,3
+N    N N  N     ,3
+N    N N   N    ,3
+N    N N    N   ,4
+N    N N     N  ,4
+N    N N      N ,4
+N    N N       N,4
+N    N  NN      ,3
+N    N  N N     ,3
+N    N  N  N    ,3
+N    N  N   N   ,4
+N    N  N    N  ,4
+N    N  N     N ,4
+N    N  N      N,4
+N    N   NN     ,3
+N    N   N N    ,3
+N    N   N  N   ,4
+N    N   N   N  ,4
+N    N   N    N ,4
+N    N   N     N,4
+N    N    NN    ,3
+N    N    N N   ,4
+N    N    N  N  ,4
+N    N    N   N ,4
+N    N    N    N,4
+N    N     NN   ,4
+N    N     N N  ,4
+N    N     N  N ,4
+N    N     N   N,4
+N    N      NN  ,5
+N    N      N N ,5
+N    N      N  N,5
+N    N       NN ,5
+N    N       N N,5
+N    N        NN,5
+N     NNN       ,3
+N     NN N      ,3
+N     NN  N     ,3
+N     NN   N    ,3
+N     NN    N   ,4
+N     NN     N  ,4
+N     NN      N ,4
+N     NN       N,4
+N     N NN      ,3
+N     N N N     ,3
+N     N N  N    ,3
+N     N N   N   ,4
+N     N N    N  ,4
+N     N N     N ,4
+N     N N      N,4
+N     N  NN     ,3
+N     N  N N    ,3
+N     N  N  N   ,4
+N     N  N   N  ,4
+N     N  N    N ,4
+N     N  N     N,4
+N     N   NN    ,3
+N     N   N N   ,4
+N     N   N  N  ,4
+N     N   N   N ,4
+N     N   N    N,4
+N     N    NN   ,4
+N     N    N N  ,4
+N     N    N  N ,4
+N     N    N   N,4
+N     N     NN  ,5
+N     N     N N ,5
+N     N     N  N,5
+N     N      NN ,5
+N     N      N N,5
+N     N       NN,5
+N      NNN      ,3
+N      NN N     ,3
+N      NN  N    ,3
+N      NN   N   ,4
+N      NN    N  ,4
+N      NN     N ,4
+N      NN      N,4
+N      N NN     ,3
+N      N N N    ,3
+N      N N  N   ,4
+N      N N   N  ,4
+N      N N    N ,4
+N      N N     N,4
+N      N  NN    ,3
+N      N  N N   ,4
+N      N  N  N  ,4
+N      N  N   N ,4
+N      N  N    N,4
+N      N   NN   ,4
+N      N   N N  ,4
+N      N   N  N ,4
+N      N   N   N,4
+N      N    NN  ,5
+N      N    N N ,5
+N      N    N  N,5
+N      N     NN ,5
+N      N     N N,5
+N      N      NN,5
+N       NNN     ,3
+N       NN N    ,3
+N       NN  N   ,4
+N       NN   N  ,4
+N       NN    N ,4
+N       NN     N,4
+N       N NN    ,3
+N       N N N   ,4
+N       N N  N  ,4
+N       N N   N ,4
+N       N N    N,4
+N       N  NN   ,4
+N       N  N N  ,4
+N       N  N  N ,4
+N       N  N   N,4
+N       N   NN  ,5
+N       N   N N ,5
+N       N   N  N,5
+N       N    NN ,5
+N       N    N N,5
+N       N     NN,5
+N        NNN    ,3
+N        NN N   ,4
+N        NN  N  ,4
+N        NN   N ,4
+N        NN    N,4
+N        N NN   ,4
+N        N N N  ,4
+N        N N  N ,4
+N        N N   N,4
+N        N  NN  ,5
+N        N  N N ,5
+N        N  N  N,5
+N        N   NN ,5
+N        N   N N,5
+N        N    NN,5
+N         NNN   ,4
+N         NN N  ,4
+N         NN  N ,4
+N         NN   N,4
+N         N NN  ,5
+N         N N N ,5
+N         N N  N,5
+N         N  NN ,5
+N         N  N N,5
+N         N   NN,5
+N          NNN  ,5
+N          NN N ,5
+N          NN  N,5
+N          N NN ,5
+N          N N N,5
+N          N  NN,5
+N           NNN ,6
+N           NN N,6
+N           N NN,6
+N            NNN,6
+ NNNN           ,1
+ NNN N          ,1
+ NNN  N         ,1
+ NNN   N        ,1
+ NNN    N       ,1
+ NNN     N      ,1
+ NNN      N     ,1
+ NNN       N    ,1
+ NNN        N   ,2
+ NNN         N  ,2
+ NNN          N ,2
+ NNN           N,2
+ NN NN          ,2
+ NN N N         ,2
+ NN N  N        ,2
+ NN N   N       ,2
+ NN N    N      ,2
+ NN N     N     ,2
+ NN N      N    ,2
+ NN N       N   ,3
+ NN N        N  ,3
+ NN N         N ,3
+ NN N          N,3
+ NN  NN         ,2
+ NN  N N        ,2
+ NN  N  N       ,2
+ NN  N   N      ,2
+ NN  N    N     ,2
+ NN  N     N    ,2
+ NN  N      N   ,3
+ NN  N       N  ,3
+ NN  N        N ,3
+ NN  N         N,3
+ NN   NN        ,2
+ NN   N N       ,2
+ NN   N  N      ,2
+ NN   N   N     ,2
+ NN   N    N    ,2
+ NN   N     N   ,3
+ NN   N      N  ,3
+ NN   N       N ,3
+ NN   N        N,3
+ NN    NN       ,2
+ NN    N N      ,2
+ NN    N  N     ,2
+ NN    N   N    ,2
+ NN    N    N   ,3
+ NN    N     N  ,3
+ NN    N      N ,3
+ NN    N       N,3
+ NN     NN      ,2
+ NN     N N     ,2
+ NN     N  N    ,2
+ NN     N   N   ,3
+ NN     N    N  ,3
+ NN     N     N ,3
+ NN     N      N,3
+ NN      NN     ,2
+ NN      N N    ,2
+ NN      N  N   ,3
+ NN      N   N  ,3
+ NN      N    N ,3
+ NN      N     N,3
+ NN       NN    ,2
+ NN       N N   ,3
+ NN       N  N  ,3
+ NN       N   N ,3
+ NN       N    N,3
+ NN        NN   ,3
+ NN        N N  ,3
+ NN        N  N ,3
+ NN        N   N,3
+ NN         NN  ,4
+ NN         N N ,4
+ NN         N  N,4
+ NN          NN ,4
+ NN          N N,4
+ NN           NN,4
+ N NNN          ,2
+ N NN N         ,2
+ N NN  N        ,2
+ N NN   N       ,2
+ N NN    N      ,2
+ N NN     N     ,2
+ N NN      N    ,2
+ N NN       N   ,3
+ N NN        N  ,3
+ N NN         N ,3
+ N NN          N,3
+ N N NN         ,2
+ N N N N        ,2
+ N N N  N       ,2
+ N N N   N      ,2
+ N N N    N     ,2
+ N N N     N    ,2
+ N N N      N   ,3
+ N N N       N  ,3
+ N N N        N ,3
+ N N N         N,3
+ N N  NN        ,2
+ N N  N N       ,2
+ N N  N  N      ,2
+ N N  N   N     ,2
+ N N  N    N    ,2
+ N N  N     N   ,3
+ N N  N      N  ,3
+ N N  N       N ,3
+ N N  N        N,3
+ N N   NN       ,2
+ N N   N N      ,2
+ N N   N  N     ,2
+ N N   N   N    ,2
+ N N   N    N   ,3
+ N N   N     N  ,3
+ N N   N      N ,3
+ N N   N       N,3
+ N N    NN      ,2
+ N N    N N     ,2
+ N N    N  N    ,2
+ N N    N   N   ,3
+ N N    N    N  ,3
+ N N    N     N ,3
+ N N    N      N,3
+ N N     NN     ,2
+ N N     N N    ,2
+ N N     N  N   ,3
+ N N     N   N  ,3
+ N N     N    N ,3
+ N N     N     N,3
+ N N      NN    ,2
+ N N      N N   ,3
+ N N      N  N  ,3
+ N N      N   N ,3
+ N N      N    N,3
+ N N       NN   ,3
+ N N       N N  ,3
+ N N       N  N ,3
+ N N       N   N,3
+ N N        NN  ,4
+ N N        N N ,4
+ N N        N  N,4
+ N N         NN ,4
+ N N         N N,4
+ N N          NN,4
+ N  NNN         ,3
+ N  NN N        ,3
+ N  NN  N       ,3
+ N  NN   N      ,3
+ N  NN    N     ,3
+ N  NN     N    ,3
+ N  NN      N   ,4
+ N  NN       N  ,4
+ N  NN        N ,4
+ N  NN         N,4
+ N  N NN        ,3
+ N  N N N       ,3
+ N  N N  N      ,3
+ N  N N   N     ,3
+ N  N N    N    ,3
+ N  N N     N   ,4
+ N  N N      N  ,4
+ N  N N       N ,4
+ N  N N        N,4
+ N  N  NN       ,3
+ N  N  N N      ,3
+ N  N  N  N     ,3
+ N  N  N   N    ,3
+ N  N  N    N   ,4
+ N  N  N     N  ,4
+ N  N  N      N ,4
+ N  N  N       N,4
+ N  N   NN      ,3
+ N  N   N N     ,3
+ N  N   N  N    ,3
+ N  N   N   N   ,4
+ N  N   N    N  ,4
+ N  N   N     N ,4
+ N  N   N      N,4
+ N  N    NN     ,3
+ N  N    N N    ,3
+ N  N    N  N   ,4
+ N  N    N   N  ,4
+ N  N    N    N ,4
+ N  N    N     N,4
+ N  N     NN    ,3
+ N  N     N N   ,4
+ N  N     N  N  ,4
+ N  N     N   N ,4
+ N  N     N    N,4
+ N  N      NN   ,4
+ N  N      N N  ,4
+ N  N      N  N ,4
+ N  N      N   N,4
+ N  N       NN  ,5
+ N  N       N N ,5
+ N  N       N  N,5
+ N  N        NN ,5
+ N  N        N N,5
+ N  N         NN,5
+ N   NNN        ,3
+ N   NN N       ,3
+ N   NN  N      ,3
+ N   NN   N     ,3
+ N   NN    N    ,3
+ N   NN     N   ,4
+ N   NN      N  ,4
+ N   NN       N ,4
+ N   NN        N,4
+ N   N NN       ,3
+ N   N N N      ,3
+ N   N N  N     ,3
+ N   N N   N    ,3
+ N   N N    N   ,4
+ N   N N     N  ,4
+ N   N N      N ,4
+ N   N N       N,4
+ N   N  NN      ,3
+ N   N  N N     ,3
+ N   N  N  N    ,3
+ N   N  N   N   ,4
+ N   N  N    N  ,4
+ N   N  N     N ,4
+ N   N  N      N,4
+ N   N   NN     ,3
+ N   N   N N    ,3
+ N   N   N  N   ,4
+ N   N   N   N  ,4
+ N   N   N    N ,4
+ N   N   N     N,4
+ N   N    NN    ,3
+ N   N    N N   ,4
+ N   N    N  N  ,4
+ N   N    N   N ,4
+ N   N    N    N,4
+ N   N     NN   ,4
+ N   N     N N  ,4
+ N   N     N  N ,4
+ N   N     N   N,4
+ N   N      NN  ,5
+ N   N      N N ,5
+ N   N      N  N,5
+ N   N       NN ,5
+ N   N       N N,5
+ N   N        NN,5
+ N    NNN       ,3
+ N    NN N      ,3
+ N    NN  N     ,3
+ N    NN   N    ,3
+ N    NN    N   ,4
+ N    NN     N  ,4
+ N    NN      N ,4
+ N    NN       N,4
+ N    N NN      ,3
+ N    N N N     ,3
+ N    N N  N    ,3
+ N    N N   N   ,4
+ N    N N    N  ,4
+ N    N N     N ,4
+ N    N N      N,4
+ N    N  NN     ,3
+ N    N  N N    ,3
+ N    N  N  N   ,4
+ N    N  N   N  ,4
+ N    N  N    N ,4
+ N    N  N     N,4
+ N    N   NN    ,3
+ N    N   N N   ,4
+ N    N   N  N  ,4
+ N    N   N   N ,4
+ N    N   N    N,4
+ N    N    NN   ,4
+ N    N    N N  ,4
+ N    N    N  N ,4
+ N    N    N   N,4
+ N    N     NN  ,5
+ N    N     N N ,5
+ N    N     N  N,5
+ N    N      NN ,5
+ N    N      N N,5
+ N    N       NN,5
+ N     NNN      ,3
+ N     NN N     ,3
+ N     NN  N    ,3
+ N     NN   N   ,4
+ N     NN    N  ,4
+ N     NN     N ,4
+ N     NN      N,4
+ N     N NN     ,3
+ N     N N N    ,3
+ N     N N  N   ,4
+ N     N N   N  ,4
+ N     N N    N ,4
+ N     N N     N,4
+ N     N  NN    ,3
+ N     N  N N   ,4
+ N     N  N  N  ,4
+ N     N  N   N ,4
+ N     N  N    N,4
+ N     N   NN   ,4
+ N     N   N N  ,4
+ N     N   N  N ,4
+ N     N   N   N,4
+ N     N    NN  ,5
+ N     N    N N ,5
+ N     N    N  N,5
+ N     N     NN ,5
+ N     N     N N,5
+ N     N      NN,5
+ N      NNN     ,3
+ N      NN N    ,3
+ N      NN  N   ,4
+ N      NN   N  ,4
+ N      NN    N ,4
+ N      NN     N,4
+ N      N NN    ,3
+ N      N N N   ,4
+ N      N N  N  ,4
+ N      N N   N ,4
+ N      N N    N,4
+ N      N  NN   ,4
+ N      N  N N  ,4
+ N      N  N  N ,4
+ N      N  N   N,4
+ N      N   NN  ,5
+ N      N   N N ,5
+ N      N   N  N,5
+ N      N    NN ,5
+ N      N    N N,5
+ N      N     NN,5
+ N       NNN    ,3
+ N       NN N   ,4
+ N       NN  N  ,4
+ N       NN   N ,4
+ N       NN    N,4
+ N       N NN   ,4
+ N       N N N  ,4
+ N       N N  N ,4
+ N       N N   N,4
+ N       N  NN  ,5
+ N       N  N N ,5
+ N       N  N  N,5
+ N       N   NN ,5
+ N       N   N N,5
+ N       N    NN,5
+ N        NNN   ,4
+ N        NN N  ,4
+ N        NN  N ,4
+ N        NN   N,4
+ N        N NN  ,5
+ N        N N N ,5
+ N        N N  N,5
+ N        N  NN ,5
+ N        N  N N,5
+ N        N   NN,5
+ N         NNN  ,5
+ N         NN N ,5
+ N         NN  N,5
+ N         N NN ,5
+ N         N N N,5
+ N         N  NN,5
+ N          NNN ,6
+ N          NN N,6
+ N          N NN,6
+ N           NNN,6
+  NNNN          ,2
+  NNN N         ,2
+  NNN  N        ,2
+  NNN   N       ,2
+  NNN    N      ,2
+  NNN     N     ,2
+  NNN      N    ,2
+  NNN       N   ,3
+  NNN        N  ,3
+  NNN         N ,3
+  NNN          N,3
+  NN NN         ,2
+  NN N N        ,2
+  NN N  N       ,2
+  NN N   N      ,2
+  NN N    N     ,2
+  NN N     N    ,2
+  NN N      N   ,3
+  NN N       N  ,3
+  NN N        N ,3
+  NN N         N,3
+  NN  NN        ,2
+  NN  N N       ,2
+  NN  N  N      ,2
+  NN  N   N     ,2
+  NN  N    N    ,2
+  NN  N     N   ,3
+  NN  N      N  ,3
+  NN  N       N ,3
+  NN  N        N,3
+  NN   NN       ,2
+  NN   N N      ,2
+  NN   N  N     ,2
+  NN   N   N    ,2
+  NN   N    N   ,3
+  NN   N     N  ,3
+  NN   N      N ,3
+  NN   N       N,3
+  NN    NN      ,2
+  NN    N N     ,2
+  NN    N  N    ,2
+  NN    N   N   ,3
+  NN    N    N  ,3
+  NN    N     N ,3
+  NN    N      N,3
+  NN     NN     ,2
+  NN     N N    ,2
+  NN     N  N   ,3
+  NN     N   N  ,3
+  NN     N    N ,3
+  NN     N     N,3
+  NN      NN    ,2
+  NN      N N   ,3
+  NN      N  N  ,3
+  NN      N   N ,3
+  NN      N    N,3
+  NN       NN   ,3
+  NN       N N  ,3
+  NN       N  N ,3
+  NN       N   N,3
+  NN        NN  ,4
+  NN        N N ,4
+  NN        N  N,4
+  NN         NN ,4
+  NN         N N,4
+  NN          NN,4
+  N NNN         ,3
+  N NN N        ,3
+  N NN  N       ,3
+  N NN   N      ,3
+  N NN    N     ,3
+  N NN     N    ,3
+  N NN      N   ,4
+  N NN       N  ,4
+  N NN        N ,4
+  N NN         N,4
+  N N NN        ,3
+  N N N N       ,3
+  N N N  N      ,3
+  N N N   N     ,3
+  N N N    N    ,3
+  N N N     N   ,4
+  N N N      N  ,4
+  N N N       N ,4
+  N N N        N,4
+  N N  NN       ,3
+  N N  N N      ,3
+  N N  N  N     ,3
+  N N  N   N    ,3
+  N N  N    N   ,4
+  N N  N     N  ,4
+  N N  N      N ,4
+  N N  N       N,4
+  N N   NN      ,3
+  N N   N N     ,3
+  N N   N  N    ,3
+  N N   N   N   ,4
+  N N   N    N  ,4
+  N N   N     N ,4
+  N N   N      N,4
+  N N    NN     ,3
+  N N    N N    ,3
+  N N    N  N   ,4
+  N N    N   N  ,4
+  N N    N    N ,4
+  N N    N     N,4
+  N N     NN    ,3
+  N N     N N   ,4
+  N N     N  N  ,4
+  N N     N   N ,4
+  N N     N    N,4
+  N N      NN   ,4
+  N N      N N  ,4
+  N N      N  N ,4
+  N N      N   N,4
+  N N       NN  ,5
+  N N       N N ,5
+  N N       N  N,5
+  N N        NN ,5
+  N N        N N,5
+  N N         NN,5
+  N  NNN        ,3
+  N  NN N       ,3
+  N  NN  N      ,3
+  N  NN   N     ,3
+  N  NN    N    ,3
+  N  NN     N   ,4
+  N  NN      N  ,4
+  N  NN       N ,4
+  N  NN        N,4
+  N  N NN       ,3
+  N  N N N      ,3
+  N  N N  N     ,3
+  N  N N   N    ,3
+  N  N N    N   ,4
+  N  N N     N  ,4
+  N  N N      N ,4
+  N  N N       N,4
+  N  N  NN      ,3
+  N  N  N N     ,3
+  N  N  N  N    ,3
+  N  N  N   N   ,4
+  N  N  N    N  ,4
+  N  N  N     N ,4
+  N  N  N      N,4
+  N  N   NN     ,3
+  N  N   N N    ,3
+  N  N   N  N   ,4
+  N  N   N   N  ,4
+  N  N   N    N ,4
+  N  N   N     N,4
+  N  N    NN    ,3
+  N  N    N N   ,4
+  N  N    N  N  ,4
+  N  N    N   N ,4
+  N  N    N    N,4
+  N  N     NN   ,4
+  N  N     N N  ,4
+  N  N     N  N ,4
+  N  N     N   N,4
+  N  N      NN  ,5
+  N  N      N N ,5
+  N  N      N  N,5
+  N  N       NN ,5
+  N  N       N N,5
+  N  N        NN,5
+  N   NNN       ,3
+  N   NN N      ,3
+  N   NN  N     ,3
+  N   NN   N    ,3
+  N   NN    N   ,4
+  N   NN     N  ,4
+  N   NN      N ,4
+  N   NN       N,4
+  N   N NN      ,3
+  N   N N N     ,3
+  N   N N  N    ,3
+  N   N N   N   ,4
+  N   N N    N  ,4
+  N   N N     N ,4
+  N   N N      N,4
+  N   N  NN     ,3
+  N   N  N N    ,3
+  N   N  N  N   ,4
+  N   N  N   N  ,4
+  N   N  N    N ,4
+  N   N  N     N,4
+  N   N   NN    ,3
+  N   N   N N   ,4
+  N   N   N  N  ,4
+  N   N   N   N ,4
+  N   N   N    N,4
+  N   N    NN   ,4
+  N   N    N N  ,4
+  N   N    N  N ,4
+  N   N    N   N,4
+  N   N     NN  ,5
+  N   N     N N ,5
+  N   N     N  N,5
+  N   N      NN ,5
+  N   N      N N,5
+  N   N       NN,5
+  N    NNN      ,3
+  N    NN N     ,3
+  N    NN  N    ,3
+  N    NN   N   ,4
+  N    NN    N  ,4
+  N    NN     N ,4
+  N    NN      N,4
+  N    N NN     ,3
+  N    N N N    ,3
+  N    N N  N   ,4
+  N    N N   N  ,4
+  N    N N    N ,4
+  N    N N     N,4
+  N    N  NN    ,3
+  N    N  N N   ,4
+  N    N  N  N  ,4
+  N    N  N   N ,4
+  N    N  N    N,4
+  N    N   NN   ,4
+  N    N   N N  ,4
+  N    N   N  N ,4
+  N    N   N   N,4
+  N    N    NN  ,5
+  N    N    N N ,5
+  N    N    N  N,5
+  N    N     NN ,5
+  N    N     N N,5
+  N    N      NN,5
+  N     NNN     ,3
+  N     NN N    ,3
+  N     NN  N   ,4
+  N     NN   N  ,4
+  N     NN    N ,4
+  N     NN     N,4
+  N     N NN    ,3
+  N     N N N   ,4
+  N     N N  N  ,4
+  N     N N   N ,4
+  N     N N    N,4
+  N     N  NN   ,4
+  N     N  N N  ,4
+  N     N  N  N ,4
+  N     N  N   N,4
+  N     N   NN  ,5
+  N     N   N N ,5
+  N     N   N  N,5
+  N     N    NN ,5
+  N     N    N N,5
+  N     N     NN,5
+  N      NNN    ,3
+  N      NN N   ,4
+  N      NN  N  ,4
+  N      NN   N ,4
+  N      NN    N,4
+  N      N NN   ,4
+  N      N N N  ,4
+  N      N N  N ,4
+  N      N N   N,4
+  N      N  NN  ,5
+  N      N  N N ,5
+  N      N  N  N,5
+  N      N   NN ,5
+  N      N   N N,5
+  N      N    NN,5
+  N       NNN   ,4
+  N       NN N  ,4
+  N       NN  N ,4
+  N       NN   N,4
+  N       N NN  ,5
+  N       N N N ,5
+  N       N N  N,5
+  N       N  NN ,5
+  N       N  N N,5
+  N       N   NN,5
+  N        NNN  ,5
+  N        NN N ,5
+  N        NN  N,5
+  N        N NN ,5
+  N        N N N,5
+  N        N  NN,5
+  N         NNN ,6
+  N         NN N,6
+  N         N NN,6
+  N          NNN,6
+   NNNN         ,3
+   NNN N        ,3
+   NNN  N       ,3
+   NNN   N      ,3
+   NNN    N     ,3
+   NNN     N    ,3
+   NNN      N   ,4
+   NNN       N  ,4
+   NNN        N ,4
+   NNN         N,4
+   NN NN        ,3
+   NN N N       ,3
+   NN N  N      ,3
+   NN N   N     ,3
+   NN N    N    ,3
+   NN N     N   ,4
+   NN N      N  ,4
+   NN N       N ,4
+   NN N        N,4
+   NN  NN       ,3
+   NN  N N      ,3
+   NN  N  N     ,3
+   NN  N   N    ,3
+   NN  N    N   ,4
+   NN  N     N  ,4
+   NN  N      N ,4
+   NN  N       N,4
+   NN   NN      ,3
+   NN   N N     ,3
+   NN   N  N    ,3
+   NN   N   N   ,4
+   NN   N    N  ,4
+   NN   N     N ,4
+   NN   N      N,4
+   NN    NN     ,3
+   NN    N N    ,3
+   NN    N  N   ,4
+   NN    N   N  ,4
+   NN    N    N ,4
+   NN    N     N,4
+   NN     NN    ,3
+   NN     N N   ,4
+   NN     N  N  ,4
+   NN     N   N ,4
+   NN     N    N,4
+   NN      NN   ,4
+   NN      N N  ,4
+   NN      N  N ,4
+   NN      N   N,4
+   NN       NN  ,5
+   NN       N N ,5
+   NN       N  N,5
+   NN        NN ,5
+   NN        N N,5
+   NN         NN,5
+   N NNN        ,3
+   N NN N       ,3
+   N NN  N      ,3
+   N NN   N     ,3
+   N NN    N    ,3
+   N NN     N   ,4
+   N NN      N  ,4
+   N NN       N ,4
+   N NN        N,4
+   N N NN       ,3
+   N N N N      ,3
+   N N N  N     ,3
+   N N N   N    ,3
+   N N N    N   ,4
+   N N N     N  ,4
+   N N N      N ,4
+   N N N       N,4
+   N N  NN      ,3
+   N N  N N     ,3
+   N N  N  N    ,3
+   N N  N   N   ,4
+   N N  N    N  ,4
+   N N  N     N ,4
+   N N  N      N,4
+   N N   NN     ,3
+   N N   N N    ,3
+   N N   N  N   ,4
+   N N   N   N  ,4
+   N N   N    N ,4
+   N N   N     N,4
+   N N    NN    ,3
+   N N    N N   ,4
+   N N    N  N  ,4
+   N N    N   N ,4
+   N N    N    N,4
+   N N     NN   ,4
+   N N     N N  ,4
+   N N     N  N ,4
+   N N     N   N,4
+   N N      NN  ,5
+   N N      N N ,5
+   N N      N  N,5
+   N N       NN ,5
+   N N       N N,5
+   N N        NN,5
+   N  NNN       ,3
+   N  NN N      ,3
+   N  NN  N     ,3
+   N  NN   N    ,3
+   N  NN    N   ,4
+   N  NN     N  ,4
+   N  NN      N ,4
+   N  NN       N,4
+   N  N NN      ,3
+   N  N N N     ,3
+   N  N N  N    ,3
+   N  N N   N   ,4
+   N  N N    N  ,4
+   N  N N     N ,4
+   N  N N      N,4
+   N  N  NN     ,3
+   N  N  N N    ,3
+   N  N  N  N   ,4
+   N  N  N   N  ,4
+   N  N  N    N ,4
+   N  N  N     N,4
+   N  N   NN    ,3
+   N  N   N N   ,4
+   N  N   N  N  ,4
+   N  N   N   N ,4
+   N  N   N    N,4
+   N  N    NN   ,4
+   N  N    N N  ,4
+   N  N    N  N ,4
+   N  N    N   N,4
+   N  N     NN  ,5
+   N  N     N N ,5
+   N  N     N  N,5
+   N  N      NN ,5
+   N  N      N N,5
+   N  N       NN,5
+   N   NNN      ,3
+   N   NN N     ,3
+   N   NN  N    ,3
+   N   NN   N   ,4
+   N   NN    N  ,4
+   N   NN     N ,4
+   N   NN      N,4
+   N   N NN     ,3
+   N   N N N    ,3
+   N   N N  N   ,4
+   N   N N   N  ,4
+   N   N N    N ,4
+   N   N N     N,4
+   N   N  NN    ,3
+   N   N  N N   ,4
+   N   N  N  N  ,4
+   N   N  N   N ,4
+   N   N  N    N,4
+   N   N   NN   ,4
+   N   N   N N  ,4
+   N   N   N  N ,4
+   N   N   N   N,4
+   N   N    NN  ,5
+   N   N    N N ,5
+   N   N    N  N,5
+   N   N     NN ,5
+   N   N     N N,5
+   N   N      NN,5
+   N    NNN     ,3
+   N    NN N    ,3
+   N    NN  N   ,4
+   N    NN   N  ,4
+   N    NN    N ,4
+   N    NN     N,4
+   N    N NN    ,3
+   N    N N N   ,4
+   N    N N  N  ,4
+   N    N N   N ,4
+   N    N N    N,4
+   N    N  NN   ,4
+   N    N  N N  ,4
+   N    N  N  N ,4
+   N    N  N   N,4
+   N    N   NN  ,5
+   N    N   N N ,5
+   N    N   N  N,5
+   N    N    NN ,5
+   N    N    N N,5
+   N    N     NN,5
+   N     NNN    ,3
+   N     NN N   ,4
+   N     NN  N  ,4
+   N     NN   N ,4
+   N     NN    N,4
+   N     N NN   ,4
+   N     N N N  ,4
+   N     N N  N ,4
+   N     N N   N,4
+   N     N  NN  ,5
+   N     N  N N ,5
+   N     N  N  N,5
+   N     N   NN ,5
+   N     N   N N,5
+   N     N    NN,5
+   N      NNN   ,4
+   N      NN N  ,4
+   N      NN  N ,4
+   N      NN   N,4
+   N      N NN  ,5
+   N      N N N ,5
+   N      N N  N,5
+   N      N  NN ,5
+   N      N  N N,5
+   N      N   NN,5
+   N       NNN  ,5
+   N       NN N ,5
+   N       NN  N,5
+   N       N NN ,5
+   N       N N N,5
+   N       N  NN,5
+   N        NNN ,6
+   N        NN N,6
+   N        N NN,6
+   N         NNN,6
+    NNNN        ,4
+    NNN N       ,4
+    NNN  N      ,4
+    NNN   N     ,4
+    NNN    N    ,4
+    NNN     N   ,5
+    NNN      N  ,5
+    NNN       N ,5
+    NNN        N,5
+    NN NN       ,4
+    NN N N      ,4
+    NN N  N     ,4
+    NN N   N    ,4
+    NN N    N   ,5
+    NN N     N  ,5
+    NN N      N ,5
+    NN N       N,5
+    NN  NN      ,4
+    NN  N N     ,4
+    NN  N  N    ,4
+    NN  N   N   ,5
+    NN  N    N  ,5
+    NN  N     N ,5
+    NN  N      N,5
+    NN   NN     ,4
+    NN   N N    ,4
+    NN   N  N   ,5
+    NN   N   N  ,5
+    NN   N    N ,5
+    NN   N     N,5
+    NN    NN    ,4
+    NN    N N   ,5
+    NN    N  N  ,5
+    NN    N   N ,5
+    NN    N    N,5
+    NN     NN   ,5
+    NN     N N  ,5
+    NN     N  N ,5
+    NN     N   N,5
+    NN      NN  ,6
+    NN      N N ,6
+    NN      N  N,6
+    NN       NN ,6
+    NN       N N,6
+    NN        NN,6
+    N NNN       ,4
+    N NN N      ,4
+    N NN  N     ,4
+    N NN   N    ,4
+    N NN    N   ,5
+    N NN     N  ,5
+    N NN      N ,5
+    N NN       N,5
+    N N NN      ,4
+    N N N N     ,4
+    N N N  N    ,4
+    N N N   N   ,5
+    N N N    N  ,5
+    N N N     N ,5
+    N N N      N,5
+    N N  NN     ,4
+    N N  N N    ,4
+    N N  N  N   ,5
+    N N  N   N  ,5
+    N N  N    N ,5
+    N N  N     N,5
+    N N   NN    ,4
+    N N   N N   ,5
+    N N   N  N  ,5
+    N N   N   N ,5
+    N N   N    N,5
+    N N    NN   ,5
+    N N    N N  ,5
+    N N    N  N ,5
+    N N    N   N,5
+    N N     NN  ,6
+    N N     N N ,6
+    N N     N  N,6
+    N N      NN ,6
+    N N      N N,6
+    N N       NN,6
+    N  NNN      ,4
+    N  NN N     ,4
+    N  NN  N    ,4
+    N  NN   N   ,5
+    N  NN    N  ,5
+    N  NN     N ,5
+    N  NN      N,5
+    N  N NN     ,4
+    N  N N N    ,4
+    N  N N  N   ,5
+    N  N N   N  ,5
+    N  N N    N ,5
+    N  N N     N,5
+    N  N  NN    ,4
+    N  N  N N   ,5
+    N  N  N  N  ,5
+    N  N  N   N ,5
+    N  N  N    N,5
+    N  N   NN   ,5
+    N  N   N N  ,5
+    N  N   N  N ,5
+    N  N   N   N,5
+    N  N    NN  ,6
+    N  N    N N ,6
+    N  N    N  N,6
+    N  N     NN ,6
+    N  N     N N,6
+    N  N      NN,6
+    N   NNN     ,4
+    N   NN N    ,4
+    N   NN  N   ,5
+    N   NN   N  ,5
+    N   NN    N ,5
+    N   NN     N,5
+    N   N NN    ,4
+    N   N N N   ,5
+    N   N N  N  ,5
+    N   N N   N ,5
+    N   N N    N,5
+    N   N  NN   ,5
+    N   N  N N  ,5
+    N   N  N  N ,5
+    N   N  N   N,5
+    N   N   NN  ,6
+    N   N   N N ,6
+    N   N   N  N,6
+    N   N    NN ,6
+    N   N    N N,6
+    N   N     NN,6
+    N    NNN    ,4
+    N    NN N   ,5
+    N    NN  N  ,5
+    N    NN   N ,5
+    N    NN    N,5
+    N    N NN   ,5
+    N    N N N  ,5
+    N    N N  N ,5
+    N    N N   N,5
+    N    N  NN  ,6
+    N    N  N N ,6
+    N    N  N  N,6
+    N    N   NN ,6
+    N    N   N N,6
+    N    N    NN,6
+    N     NNN   ,5
+    N     NN N  ,5
+    N     NN  N ,5
+    N     NN   N,5
+    N     N NN  ,6
+    N     N N N ,6
+    N     N N  N,6
+    N     N  NN ,6
+    N     N  N N,6
+    N     N   NN,6
+    N      NNN  ,6
+    N      NN N ,6
+    N      NN  N,6
+    N      N NN ,6
+    N      N N N,6
+    N      N  NN,6
+    N       NNN ,7
+    N       NN N,7
+    N       N NN,7
+    N        NNN,7
+     NNNN       ,4
+     NNN N      ,4
+     NNN  N     ,4
+     NNN   N    ,4
+     NNN    N   ,5
+     NNN     N  ,5
+     NNN      N ,5
+     NNN       N,5
+     NN NN      ,4
+     NN N N     ,4
+     NN N  N    ,4
+     NN N   N   ,5
+     NN N    N  ,5
+     NN N     N ,5
+     NN N      N,5
+     NN  NN     ,4
+     NN  N N    ,4
+     NN  N  N   ,5
+     NN  N   N  ,5
+     NN  N    N ,5
+     NN  N     N,5
+     NN   NN    ,4
+     NN   N N   ,5
+     NN   N  N  ,5
+     NN   N   N ,5
+     NN   N    N,5
+     NN    NN   ,5
+     NN    N N  ,5
+     NN    N  N ,5
+     NN    N   N,5
+     NN     NN  ,6
+     NN     N N ,6
+     NN     N  N,6
+     NN      NN ,6
+     NN      N N,6
+     NN       NN,6
+     N NNN      ,4
+     N NN N     ,4
+     N NN  N    ,4
+     N NN   N   ,5
+     N NN    N  ,5
+     N NN     N ,5
+     N NN      N,5
+     N N NN     ,4
+     N N N N    ,4
+     N N N  N   ,5
+     N N N   N  ,5
+     N N N    N ,5
+     N N N     N,5
+     N N  NN    ,4
+     N N  N N   ,5
+     N N  N  N  ,5
+     N N  N   N ,5
+     N N  N    N,5
+     N N   NN   ,5
+     N N   N N  ,5
+     N N   N  N ,5
+     N N   N   N,5
+     N N    NN  ,6
+     N N    N N ,6
+     N N    N  N,6
+     N N     NN ,6
+     N N     N N,6
+     N N      NN,6
+     N  NNN     ,4
+     N  NN N    ,4
+     N  NN  N   ,5
+     N  NN   N  ,5
+     N  NN    N ,5
+     N  NN     N,5
+     N  N NN    ,4
+     N  N N N   ,5
+     N  N N  N  ,5
+     N  N N   N ,5
+     N  N N    N,5
+     N  N  NN   ,5
+     N  N  N N  ,5
+     N  N  N  N ,5
+     N  N  N   N,5
+     N  N   NN  ,6
+     N  N   N N ,6
+     N  N   N  N,6
+     N  N    NN ,6
+     N  N    N N,6
+     N  N     NN,6
+     N   NNN    ,4
+     N   NN N   ,5
+     N   NN  N  ,5
+     N   NN   N ,5
+     N   NN    N,5
+     N   N NN   ,5
+     N   N N N  ,5
+     N   N N  N ,5
+     N   N N   N,5
+     N   N  NN  ,6
+     N   N  N N ,6
+     N   N  N  N,6
+     N   N   NN ,6
+     N   N   N N,6
+     N   N    NN,6
+     N    NNN   ,5
+     N    NN N  ,5
+     N    NN  N ,5
+     N    NN   N,5
+     N    N NN  ,6
+     N    N N N ,6
+     N    N N  N,6
+     N    N  NN ,6
+     N    N  N N,6
+     N    N   NN,6
+     N     NNN  ,6
+     N     NN N ,6
+     N     NN  N,6
+     N     N NN ,6
+     N     N N N,6
+     N     N  NN,6
+     N      NNN ,7
+     N      NN N,7
+     N      N NN,7
+     N       NNN,7
+      NNNN      ,4
+      NNN N     ,4
+      NNN  N    ,4
+      NNN   N   ,5
+      NNN    N  ,5
+      NNN     N ,5
+      NNN      N,5
+      NN NN     ,4
+      NN N N    ,4
+      NN N  N   ,5
+      NN N   N  ,5
+      NN N    N ,5
+      NN N     N,5
+      NN  NN    ,4
+      NN  N N   ,5
+      NN  N  N  ,5
+      NN  N   N ,5
+      NN  N    N,5
+      NN   NN   ,5
+      NN   N N  ,5
+      NN   N  N ,5
+      NN   N   N,5
+      NN    NN  ,6
+      NN    N N ,6
+      NN    N  N,6
+      NN     NN ,6
+      NN     N N,6
+      NN      NN,6
+      N NNN     ,4
+      N NN N    ,4
+      N NN  N   ,5
+      N NN   N  ,5
+      N NN    N ,5
+      N NN     N,5
+      N N NN    ,4
+      N N N N   ,5
+      N N N  N  ,5
+      N N N   N ,5
+      N N N    N,5
+      N N  NN   ,5
+      N N  N N  ,5
+      N N  N  N ,5
+      N N  N   N,5
+      N N   NN  ,6
+      N N   N N ,6
+      N N   N  N,6
+      N N    NN ,6
+      N N    N N,6
+      N N     NN,6
+      N  NNN    ,4
+      N  NN N   ,5
+      N  NN  N  ,5
+      N  NN   N ,5
+      N  NN    N,5
+      N  N NN   ,5
+      N  N N N  ,5
+      N  N N  N ,5
+      N  N N   N,5
+      N  N  NN  ,6
+      N  N  N N ,6
+      N  N  N  N,6
+      N  N   NN ,6
+      N  N   N N,6
+      N  N    NN,6
+      N   NNN   ,5
+      N   NN N  ,5
+      N   NN  N ,5
+      N   NN   N,5
+      N   N NN  ,6
+      N   N N N ,6
+      N   N N  N,6
+      N   N  NN ,6
+      N   N  N N,6
+      N   N   NN,6
+      N    NNN  ,6
+      N    NN N ,6
+      N    NN  N,6
+      N    N NN ,6
+      N    N N N,6
+      N    N  NN,6
+      N     NNN ,7
+      N     NN N,7
+      N     N NN,7
+      N      NNN,7
+       NNNN     ,4
+       NNN N    ,4
+       NNN  N   ,5
+       NNN   N  ,5
+       NNN    N ,5
+       NNN     N,5
+       NN NN    ,4
+       NN N N   ,5
+       NN N  N  ,5
+       NN N   N ,5
+       NN N    N,5
+       NN  NN   ,5
+       NN  N N  ,5
+       NN  N  N ,5
+       NN  N   N,5
+       NN   NN  ,6
+       NN   N N ,6
+       NN   N  N,6
+       NN    NN ,6
+       NN    N N,6
+       NN     NN,6
+       N NNN    ,4
+       N NN N   ,5
+       N NN  N  ,5
+       N NN   N ,5
+       N NN    N,5
+       N N NN   ,5
+       N N N N  ,5
+       N N N  N ,5
+       N N N   N,5
+       N N  NN  ,6
+       N N  N N ,6
+       N N  N  N,6
+       N N   NN ,6
+       N N   N N,6
+       N N    NN,6
+       N  NNN   ,5
+       N  NN N  ,5
+       N  NN  N ,5
+       N  NN   N,5
+       N  N NN  ,6
+       N  N N N ,6
+       N  N N  N,6
+       N  N  NN ,6
+       N  N  N N,6
+       N  N   NN,6
+       N   NNN  ,6
+       N   NN N ,6
+       N   NN  N,6
+       N   N NN ,6
+       N   N N N,6
+       N   N  NN,6
+       N    NNN ,7
+       N    NN N,7
+       N    N NN,7
+       N     NNN,7
+        NNNN    ,4
+        NNN N   ,5
+        NNN  N  ,5
+        NNN   N ,5
+        NNN    N,5
+        NN NN   ,5
+        NN N N  ,5
+        NN N  N ,5
+        NN N   N,5
+        NN  NN  ,6
+        NN  N N ,6
+        NN  N  N,6
+        NN   NN ,6
+        NN   N N,6
+        NN    NN,6
+        N NNN   ,5
+        N NN N  ,5
+        N NN  N ,5
+        N NN   N,5
+        N N NN  ,6
+        N N N N ,6
+        N N N  N,6
+        N N  NN ,6
+        N N  N N,6
+        N N   NN,6
+        N  NNN  ,6
+        N  NN N ,6
+        N  NN  N,6
+        N  N NN ,6
+        N  N N N,6
+        N  N  NN,6
+        N   NNN ,7
+        N   NN N,7
+        N   N NN,7
+        N    NNN,7
+         NNNN   ,5
+         NNN N  ,5
+         NNN  N ,5
+         NNN   N,5
+         NN NN  ,6
+         NN N N ,6
+         NN N  N,6
+         NN  NN ,6
+         NN  N N,6
+         NN   NN,6
+         N NNN  ,6
+         N NN N ,6
+         N NN  N,6
+         N N NN ,6
+         N N N N,6
+         N N  NN,6
+         N  NNN ,7
+         N  NN N,7
+         N  N NN,7
+         N   NNN,7
+          NNNN  ,6
+          NNN N ,6
+          NNN  N,6
+          NN NN ,6
+          NN N N,6
+          NN  NN,6
+          N NNN ,7
+          N NN N,7
+          N N NN,7
+          N  NNN,7
+           NNNN ,7
+           NNN N,7
+           NN NN,7
+           N NNN,7
+            NNNN,8

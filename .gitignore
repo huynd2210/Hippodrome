@@ -1,0 +1,59 @@
+# Executables
+*.exe
+*.o
+*.out
+
+# Large data files
+*.db
+solutions_csv/
+*_solutions.csv
+*_solutions_*.csv
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build/
+dist/
+
+# SQLite amalgamation (can be downloaded separately)
+sqlite-amalgamation*/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Node modules (if any JavaScript tools are added)
+node_modules/
+
+# Environment files
+.env
+.venv/
+venv/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Large generated files
+unique_board_states.txt
+
+# Sample solutions (keep small sample files, exclude large ones)
+solutions_batch_*.csv
