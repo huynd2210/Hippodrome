@@ -2,32 +2,6 @@
 
 A high-performance puzzle solver for the **Hippodrome puzzle** - a chess-based puzzle where you must arrange pieces (King, Rook, Bishop, Knight) on a 4x4 board to reach a specific goal state.
 
-![Demo](https://img.shields.io/badge/Demo-Live%20Frontend-brightgreen)
-![C++](https://img.shields.io/badge/C%2B%2B-Solver-blue)
-![Python](https://img.shields.io/badge/Python-Tools-yellow)
-![Web](https://img.shields.io/badge/Web-Explorer-orange)
-
-## 🎯 Features
-
-### 🚀 Core Solver
-- **Multi-threaded C++ solver** using A* search algorithm
-- **Range processing** - solve specific configuration ranges
-- **High performance** - processes 415,801 configurations efficiently
-- **Knight heuristics** - optimized pathfinding for chess piece movements
-
-### 🎮 Interactive Web Explorer
-- **Live solution playback** with step-by-step visualization  
-- **Interactive board editor** - place pieces and search for solutions
-- **Lichess-style chess pieces** with beautiful SVG graphics
-- **SQLite database** for fast solution retrieval
-- **Speed controls** - adjust playback speed from 0.5x to 4x
-- **Random puzzle generator** for exploration
-
-### 🛠️ Utility Tools
-- **Solution visualizer** - command-line step-by-step display
-- **Solution validator** - verify correctness of generated solutions
-- **Batch processing** - validate all solutions efficiently
-
 ## 🚀 Quick Start
 
 ### 1. **Compile the Solver**
@@ -70,13 +44,4 @@ Open http://localhost:5000 in your browser! 🎉
 
 # Process all configurations
 ./solver input.csv output.csv 0-415800 12
-```
-
-### **Solution Visualization**
-```python
-from visualize_solution import visualize_solution
-
-# Visualize a solution step by step
-moves = "R0→R1,B5→B2,K10→K6,..."
-visualize_solution("RRKKBBBRKRKXNNNN", moves)
 ```
