@@ -33,9 +33,6 @@ class HippodromeExplorer {
         
         // Target elements
         this.targetSelect = document.getElementById('target-select');
-        this.targetDescription = document.getElementById('target-description');
-        this.targetPositions = document.getElementById('target-positions');
-        this.currentTargetSpan = document.getElementById('current-target');
         
         // Controls
         this.playPauseBtn = document.getElementById('play-pause-btn');
@@ -76,7 +73,6 @@ class HippodromeExplorer {
         // Target selection
         this.targetSelect.addEventListener('change', () => {
             this.currentTarget = this.targetSelect.value;
-            this.updateTargetInfo();
             this.highlightTargetSquares();
             this.loadStatistics();
             this.loadRandomSolution(); // Load new random solution for new target
@@ -143,22 +139,37 @@ class HippodromeExplorer {
     }
 
     async loadTargets() {
-        try {
-            const response = await fetch('/api/targets');
-            const targets = await response.json();
-            
-            if (targets.error) {
-                console.error('Error loading targets:', targets.error);
-                return;
+        // Define targets directly with simplified descriptions
+        const targets = [
+            {
+                name: 'top-row',
+                positions: '0,1,2,3',
+                description: 'top-row'
+            },
+            {
+                name: 'first-column', 
+                positions: '0,4,8,12',
+                description: 'first-column'
+            },
+            {
+                name: 'last-column',
+                positions: '3,7,11,15', 
+                description: 'last-column'
+            },
+            {
+                name: 'center',
+                positions: '5,6,9,10',
+                description: 'center'
+            },
+            {
+                name: 'corners',
+                positions: '0,3,12,15',
+                description: 'corners'
             }
-            
-            this.availableTargets = targets;
-            this.populateTargetDropdown(targets);
-            this.updateTargetInfo();
-            
-        } catch (error) {
-            console.error('Error loading targets:', error);
-        }
+        ];
+        
+        this.availableTargets = targets;
+        this.populateTargetDropdown(targets);
     }
 
     populateTargetDropdown(targets) {
@@ -167,7 +178,7 @@ class HippodromeExplorer {
         targets.forEach(target => {
             const option = document.createElement('option');
             option.value = target.name;
-            option.textContent = `${target.description} (${target.positions})`;
+            option.textContent = target.description;
             if (target.name === this.currentTarget) {
                 option.selected = true;
             }
@@ -175,14 +186,7 @@ class HippodromeExplorer {
         });
     }
 
-    updateTargetInfo() {
-        const target = this.availableTargets.find(t => t.name === this.currentTarget);
-        if (target) {
-            this.targetDescription.textContent = target.description;
-            this.targetPositions.textContent = target.positions;
-            this.currentTargetSpan.textContent = target.name;
-        }
-    }
+
 
     highlightTargetSquares() {
         // Remove existing highlights
@@ -308,14 +312,31 @@ class HippodromeExplorer {
         if (!boardState) return;
         
         const squares = document.querySelectorAll('.chess-square');
+        const target = this.availableTargets.find(t => t.name === this.currentTarget);
+        const targetPositions = target ? target.positions.split(',').map(p => parseInt(p.trim())) : [];
+        
         for (let i = 0; i < 16; i++) {
             const square = squares[i];
             const piece = boardState[i];
-            square.textContent = this.getPieceSymbol(piece);
+            
+            // Clear previous content and classes
+            square.innerHTML = '';
             square.className = square.className.replace(/piece-\w+/g, '');
+            square.classList.remove('knight-on-target');
             
             if (piece !== 'x') {
+                // Create Lichess-style piece image
+                const img = document.createElement('img');
+                img.className = 'lichess-piece';
+                img.src = this.getLichessPieceUrl(piece);
+                img.alt = piece;
+                square.appendChild(img);
                 square.classList.add(`piece-${this.getPieceType(piece)}`);
+                
+                // Add special glow if knight is on target position
+                if ((piece === 'N' || piece === 'n') && targetPositions.includes(i)) {
+                    square.classList.add('knight-on-target');
+                }
             }
         }
         
@@ -323,17 +344,18 @@ class HippodromeExplorer {
         this.highlightTargetSquares();
     }
 
-    getPieceSymbol(piece) {
-        const symbols = {
-            'K': '♔', 'k': '♚',
-            'Q': '♕', 'q': '♛', 
-            'R': '♖', 'r': '♜',
-            'B': '♗', 'b': '♝',
-            'N': '♘', 'n': '♞',
-            'P': '♙', 'p': '♟',
-            'x': ''
+    getLichessPieceUrl(piece) {
+        // Using Lichess piece images for authentic look
+        const baseUrl = 'https://lichess1.org/assets/piece/cburnett/';
+        const pieceMap = {
+            'K': 'wK.svg', 'k': 'bK.svg',
+            'Q': 'wQ.svg', 'q': 'bQ.svg', 
+            'R': 'wR.svg', 'r': 'bR.svg',
+            'B': 'wB.svg', 'b': 'bB.svg',
+            'N': 'wN.svg', 'n': 'bN.svg',
+            'P': 'wP.svg', 'p': 'bP.svg'
         };
-        return symbols[piece] || '';
+        return baseUrl + (pieceMap[piece] || '');
     }
 
     getPieceType(piece) {

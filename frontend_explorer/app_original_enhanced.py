@@ -13,7 +13,16 @@ TARGETS_INDEX_DB = "targets_index.db"
 
 def get_target_db_connection(target_name):
     """Get a database connection for a specific target"""
-    db_file = f"hippodrome_{target_name.replace('-', '_')}.db"
+    # Map targets to their actual database files
+    target_db_map = {
+        'top-row': 'hippodrome_solutions.db',  # Original database has top-row solutions
+        'first-column': 'hippodrome_first_column.db',
+        'last-column': 'hippodrome_last_column.db',
+        'corners': 'hippodrome_corners.db',
+        'center': 'hippodrome_solutions.db'  # Fallback to original for now
+    }
+    
+    db_file = target_db_map.get(target_name, f"hippodrome_{target_name.replace('-', '_')}.db")
     
     if not os.path.exists(db_file):
         raise FileNotFoundError(f"Target database not found: {db_file}")

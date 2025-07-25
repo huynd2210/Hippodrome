@@ -18,31 +18,37 @@ def get_target_config(filename):
         return {
             'name': 'top-row',
             'positions': [0, 1, 2, 3],
-            'description': 'Knights must reach the top row'
+            'description': 'top-row'
         }
     elif 'first_column' in base_name:
         return {
             'name': 'first-column', 
             'positions': [0, 4, 8, 12],
-            'description': 'Knights must reach the first column'
+            'description': 'first-column'
         }
     elif 'last_column' in base_name:
         return {
             'name': 'last-column',
             'positions': [3, 7, 11, 15], 
-            'description': 'Knights must reach the last column'
+            'description': 'last-column'
         }
     elif 'corners' in base_name:
         return {
             'name': 'corners',
             'positions': [0, 3, 12, 15],
-            'description': 'Knights must reach the corner positions'
+            'description': 'corners'
+        }
+    elif 'center' in base_name:
+        return {
+            'name': 'center',
+            'positions': [5, 6, 9, 10],
+            'description': 'center'
         }
     elif 'bottom' in base_name:
         return {
             'name': 'bottom-row',
             'positions': [12, 13, 14, 15],
-            'description': 'Knights must reach the bottom row'
+            'description': 'bottom-row'
         }
     
     return None
@@ -106,7 +112,8 @@ def create_target_database(csv_path, target_config):
                     initial_board = row['Initial Board'].strip()
                     solution_path = row['Solution Path'].strip()
                     moves = int(row['Moves'])
-                    time_ms = float(row['Time (ms)'])
+                    # Handle optional Time (ms) column
+                    time_ms = float(row.get('Time (ms)', 0.0))
                     
                     # Validate board length
                     if len(initial_board) != 16:
@@ -145,11 +152,15 @@ def create_target_database(csv_path, target_config):
         
         # Get statistics
         cursor.execute('SELECT MIN(moves), MAX(moves), AVG(moves) FROM solutions WHERE moves > 0')
-        min_moves, max_moves, avg_moves = cursor.fetchone()
+        stats = cursor.fetchone()
+        min_moves, max_moves, avg_moves = stats if stats else (None, None, None)
         
         print(f"✅ Created {target_name} database:")
         print(f"   • Solutions: {row_count:,}")
-        print(f"   • Move range: {min_moves} - {max_moves} (avg: {avg_moves:.1f})")
+        if min_moves is not None and max_moves is not None and avg_moves is not None:
+            print(f"   • Move range: {min_moves} - {max_moves} (avg: {avg_moves:.1f})")
+        else:
+            print(f"   • Move range: No valid solutions")
         print(f"   • Database: {db_path} ({os.path.getsize(db_path) / (1024*1024):.1f} MB)")
         
         return True

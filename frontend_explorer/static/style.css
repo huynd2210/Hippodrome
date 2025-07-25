@@ -290,7 +290,7 @@ input[type="range"]::-webkit-slider-thumb:active {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-.square {
+.chess-square {
     width: 95px;
     height: 95px;
     display: flex;
@@ -302,16 +302,16 @@ input[type="range"]::-webkit-slider-thumb:active {
     position: relative;
 }
 
-.square.light {
+.chess-square.light {
     background: #f0d9b5;
 }
 
-.square.dark {
+.chess-square.dark {
     background: #b58863;
 }
 
 /* Lichess chess piece styling */
-.square .lichess-piece {
+.chess-square .lichess-piece {
     transition: all 0.3s ease;
     filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4));
     max-width: 85%;
@@ -319,30 +319,30 @@ input[type="range"]::-webkit-slider-thumb:active {
     object-fit: contain;
 }
 
-.square .lichess-piece:hover {
+.chess-square .lichess-piece:hover {
     transform: scale(1.05);
     filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.6));
 }
 
 /* Piece-specific subtle enhancements (optional) */
-.square.piece-k .lichess-piece {
+.chess-square.piece-k .lichess-piece {
     filter: drop-shadow(2px 2px 4px rgba(255, 215, 0, 0.3)) drop-shadow(0 0 8px rgba(255, 215, 0, 0.2));
 }
 
-.square.piece-n .lichess-piece {
+.chess-square.piece-n .lichess-piece {
     filter: drop-shadow(2px 2px 4px rgba(34, 139, 34, 0.3)) drop-shadow(0 0 8px rgba(34, 139, 34, 0.2));
 }
 
-.square.piece-r .lichess-piece {
+.chess-square.piece-r .lichess-piece {
     filter: drop-shadow(2px 2px 4px rgba(65, 105, 225, 0.3)) drop-shadow(0 0 8px rgba(65, 105, 225, 0.2));
 }
 
-.square.piece-b .lichess-piece {
+.chess-square.piece-b .lichess-piece {
     filter: drop-shadow(2px 2px 4px rgba(139, 69, 19, 0.3)) drop-shadow(0 0 8px rgba(139, 69, 19, 0.2));
 }
 
 /* Enhanced goal row highlighting for images */
-.square.goal-row .lichess-piece {
+.chess-square.goal-row .lichess-piece {
     filter: drop-shadow(0 0 12px rgba(76, 175, 80, 0.8)) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4));
     animation: goalGlow 2s ease-in-out infinite alternate;
 }
@@ -356,28 +356,50 @@ input[type="range"]::-webkit-slider-thumb:active {
     }
 }
 
-/* Target highlighting for selected targets */
-.square.target-highlight {
-    background: linear-gradient(45deg, #ffd700, #ffed4e) !important;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+/* Target highlighting for selected targets - Green instead of gold */
+.chess-square.target-highlight {
+    background: linear-gradient(45deg, #4CAF50, #66BB6A) !important;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
     position: relative;
 }
 
-.square.target-highlight::after {
+.chess-square.target-highlight::after {
     content: '🎯';
     position: absolute;
     top: 2px;
     right: 2px;
     font-size: 12px;
-    opacity: 0.8;
+    opacity: 0.7;
 }
 
-.square.highlight {
+/* Special glow effect when knight reaches target position */
+.chess-square.target-highlight.knight-on-target {
+    background: linear-gradient(45deg, #4CAF50, #66BB6A) !important;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.9), 
+                0 0 40px rgba(76, 175, 80, 0.6),
+                inset 0 0 10px rgba(255, 255, 255, 0.2);
+    animation: knightTargetGlow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes knightTargetGlow {
+    0% { 
+        box-shadow: 0 0 20px rgba(76, 175, 80, 0.9), 
+                    0 0 40px rgba(76, 175, 80, 0.6),
+                    inset 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+    100% { 
+        box-shadow: 0 0 30px rgba(76, 175, 80, 1), 
+                    0 0 60px rgba(76, 175, 80, 0.8),
+                    inset 0 0 15px rgba(255, 255, 255, 0.3);
+    }
+}
+
+.chess-square.highlight {
     box-shadow: inset 0 0 0 4px #ffd700;
     animation: pulse 1s infinite;
 }
 
-.square.goal-row {
+.chess-square.goal-row {
     background: linear-gradient(45deg, #4CAF50, #66BB6A) !important;
 }
 
@@ -539,6 +561,14 @@ input[type="range"]::-webkit-slider-thumb:active {
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
 
+.piece-icon {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    margin-right: 8px;
+    filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));
+}
+
 .editor-actions {
     display: flex;
     gap: 10px;
@@ -586,12 +616,12 @@ input[type="range"]::-webkit-slider-thumb:active {
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.4) !important;
 }
 
-.square.clickable {
+.chess-square.clickable {
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.square.clickable:hover {
+.chess-square.clickable:hover {
     background: rgba(255, 215, 0, 0.2) !important;
     transform: scale(1.05);
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
@@ -702,7 +732,7 @@ input[type="range"]::-webkit-slider-thumb:active {
         gap: 20px;
     }
     
-    .square {
+    .chess-square {
         width: 80px;
         height: 80px;
         font-size: 2.5em;
@@ -723,7 +753,7 @@ input[type="range"]::-webkit-slider-thumb:active {
         order: 1;
     }
     
-    .square {
+    .chess-square {
         width: 70px;
         height: 70px;
         font-size: 2em;
@@ -743,7 +773,7 @@ input[type="range"]::-webkit-slider-thumb:active {
         font-size: 1em;
     }
     
-    .square {
+    .chess-square {
         width: 60px;
         height: 60px;
         font-size: 1.8em;
