@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Hippodrome Solution Explorer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🎯 Hippodrome Solution Explorer</h1>
+            <p class="subtitle">Complete Database of 415,801 Puzzle Solutions</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <div class="search-section">
+                    <h3>🔍 Explore Solutions</h3>
+                    
+                    <!-- Target Selection (minimal addition) -->
+                    <div class="input-group">
+                        <label for="target-select">Target:</label>
+                        <select id="target-select">
+                            <option value="top-row">Top Row (Knights to positions 0,1,2,3)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="search-controls">
+                        <div class="input-group">
+                            <label for="config-id">Configuration ID:</label>
+                            <input type="number" id="config-id" min="0" max="415800" placeholder="Enter ID (0-415800)">
+                            <button id="search-btn">Search</button>
+                        </div>
+                        <div class="button-group">
+                            <button id="random-btn" class="btn-primary">🎲 Random Puzzle</button>
+                        </div>
+                    </div>
+                    
+                </div>
+
+                <!-- Board Editor Section -->
+                <div class="editor-section">
+                    <h3>✏️ Board Editor</h3>
+                    <div class="editor-controls">
+                        <button id="edit-mode-btn" class="btn-secondary">📝 Edit Board</button>
+                        
+                        <div id="piece-palette" class="piece-palette hidden">
+                            <h4>Select Piece to Place:</h4>
+                            <div class="piece-buttons">
+                                <button class="piece-btn active" data-piece="K">♔ King</button>
+                                <button class="piece-btn" data-piece="R">♖ Rook</button>
+                                <button class="piece-btn" data-piece="B">♗ Bishop</button>
+                                <button class="piece-btn" data-piece="N">♘ Knight</button>
+                                <button class="piece-btn" data-piece="x">❌ Empty</button>
+                            </div>
+                            
+                            <div class="editor-actions">
+                                <button id="clear-board-btn" class="btn-warning">🧹 Clear Board</button>
+                                <button id="search-board-btn" class="btn-success">🔍 Search This Board</button>
+                                <button id="exit-edit-btn" class="btn-secondary">👁️ View Mode</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Playback Controls (only shown in view mode) -->
+                <div id="playback-section" class="playback-section">
+                    <h3>🎮 Solution Playback</h3>
+                    <div class="solution-controls">
+                        <div class="playback-controls">
+                            <button id="first-btn" title="First Step">⏪</button>
+                            <button id="prev-btn" title="Previous Step">⏮</button>
+                            <button id="play-pause-btn" title="Play/Pause">▶️</button>
+                            <button id="next-btn" title="Next Step">⏭</button>
+                            <button id="last-btn" title="Last Step">⏩</button>
+                        </div>
+                        
+                        <div class="speed-controls">
+                            <label for="speed-slider">Speed:</label>
+                            <div class="speed-slider-container">
+                                <span class="speed-label">0.5x</span>
+                                <input type="range" id="speed-slider" min="250" max="2000" value="1250" step="50" title="Animation speed: 0.5x (slow) to 4x (fast)">
+                                <span class="speed-label">4x</span>
+                            </div>
+                            <span id="speed-display">1.00s (1.0x)</span>
+                        </div>
+                        
+                        <div class="progress-bar">
+                            <div id="progress-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Solution Info -->
+                <div class="solution-info">
+                    <h3>📊 Current Solution</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="label">ID:</span>
+                            <span id="current-id">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Moves:</span>
+                            <span id="current-moves">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Step:</span>
+                            <span id="current-step">- / -</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Panel -->
+                <div class="stats-panel">
+                    <h3>📈 Database Statistics</h3>
+                    <div id="stats-content">
+                        <p>Loading statistics...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Board and Controls -->
+            <div class="game-area">
+                <!-- Chess Board -->
+                <div class="board-container">
+                    <div class="board-header">
+                        <h2 id="board-title">Hippodrome Puzzle Board</h2>
+                        <div class="goal-indicator">
+                            <span id="board-mode-indicator">Goal: Get all Knights (♞) to the top row</span>
+                        </div>
+                    </div>
+                    <div id="chess-board" class="chess-board">
+                        <!-- Board squares will be generated by JavaScript -->
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p>Loading solution...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="error-message hidden">
+            <span id="error-text"></span>
+            <button id="close-error">×</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script_original_enhanced.js') }}"></script>
+</body>
+</html> 

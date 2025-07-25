@@ -5,7 +5,6 @@
 #include <unordered_set>
 #include <functional>
 #include <fstream>
-#include <filesystem>
 #include <stdexcept>
 #include <cmath>
 #include <chrono>
@@ -14,6 +13,108 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+
+// Target configuration for the puzzle
+struct Target {
+    std::vector<int> positions;
+    std::string name;
+    
+    Target(const std::vector<int>& pos, const std::string& n) 
+        : positions(pos), name(n) {}
+};
+
+// Predefined targets
+namespace Targets {
+    const Target TOP_ROW({0, 1, 2, 3}, "top-row");
+    const Target BOTTOM_ROW({12, 13, 14, 15}, "bottom-row");
+    const Target FIRST_COLUMN({0, 4, 8, 12}, "first-column");
+    const Target LAST_COLUMN({3, 7, 11, 15}, "last-column");
+}
+
+// Function to parse target from string
+Target parse_target(const std::string& target_str) {
+    if (target_str == "top-row") return Targets::TOP_ROW;
+    if (target_str == "bottom-row") return Targets::BOTTOM_ROW;
+    if (target_str == "first-column") return Targets::FIRST_COLUMN;
+    if (target_str == "last-column") return Targets::LAST_COLUMN;
+    
+    // Try to parse as custom positions (e.g., "0,1,4,5")
+    std::vector<int> positions;
+    std::stringstream ss(target_str);
+    std::string pos_str;
+    
+    while (std::getline(ss, pos_str, ',')) {
+        try {
+            int pos = std::stoi(pos_str);
+            if (pos >= 0 && pos < 16) {
+                positions.push_back(pos);
+            }
+        } catch (...) {
+            // Invalid position, skip
+        }
+    }
+    
+    if (positions.size() == 4) {
+        return Target(positions, "custom-" + target_str);
+    }
+    
+    // Default to top-row if parsing fails
+    return Targets::TOP_ROW;
+}
+
+// Calculate minimum knight moves from position to any target position
+int knight_distance_to_targets(int from_pos, const Target& target) {
+    int from_row = from_pos / 4;
+    int from_col = from_pos % 4;
+    
+    int min_distance = INT_MAX;
+    for (int target_pos : target.positions) {
+        int target_row = target_pos / 4;
+        int target_col = target_pos % 4;
+        
+        // Use BFS to find exact knight distance (more accurate than heuristic)
+        std::queue<std::pair<int, int>> q; // (position, distance)
+        std::unordered_set<int> visited;
+        
+        q.push({from_pos, 0});
+        visited.insert(from_pos);
+        
+        while (!q.empty()) {
+            auto [pos, dist] = q.front();
+            q.pop();
+            
+            if (pos == target_pos) {
+                min_distance = std::min(min_distance, dist);
+                break;
+            }
+            
+            if (dist >= min_distance) continue; // Pruning
+            
+            int row = pos / 4;
+            int col = pos % 4;
+            
+            // Knight moves
+            std::vector<std::pair<int, int>> knight_moves = {
+                {-2, -1}, {-2, 1}, {-1, -2}, {-1, 2},
+                {1, -2}, {1, 2}, {2, -1}, {2, 1}
+            };
+            
+            for (auto [dr, dc] : knight_moves) {
+                int new_row = row + dr;
+                int new_col = col + dc;
+                if (new_row >= 0 && new_row < 4 && new_col >= 0 && new_col < 4) {
+                    int new_pos = new_row * 4 + new_col;
+                    if (visited.find(new_pos) == visited.end()) {
+                        visited.insert(new_pos);
+                        q.push({new_pos, dist + 1});
+                    }
+                }
+            }
+        }
+    }
+    
+    return min_distance == INT_MAX ? 0 : min_distance;
+}
 
 // Represents a state in the A* search
 struct State {
@@ -29,10 +130,10 @@ struct State {
 };
 
 // --- Function Prototypes ---
-int calculate_heuristic(const std::string& board);
+int calculate_heuristic(const std::string& board, const Target& target);
 bool is_valid_move(char piece, int r1, int c1, int r2, int c2);
 std::vector<std::string> get_next_states(const std::string& board);
-std::vector<std::string> solve_hippodrome(const std::string& initial_board_str);
+std::vector<std::string> solve_hippodrome(const std::string& initial_board_str, const Target& target);
 void print_board(const std::string& board_str);
 std::vector<std::pair<int, std::string>> load_configs_from_csv(const std::string& csv_path);
 void save_batch_to_csv(const std::vector<std::tuple<int, std::string, std::vector<std::string>, int, double>>& solutions, const std::string& filename);
@@ -48,7 +149,8 @@ void process_configs_range(
     int end_idx,
     int thread_id,
     std::vector<std::tuple<int, std::string, std::vector<std::string>, int, double>>& shared_results,
-    int total_configs
+    int total_configs,
+    const Target& target
 ) {
     std::vector<std::tuple<int, std::string, std::vector<std::string>, int, double>> local_results;
     
@@ -69,7 +171,7 @@ void process_configs_range(
         }
 
         auto start = std::chrono::high_resolution_clock::now();
-        std::vector<std::string> solution_path = solve_hippodrome(initial_board);
+        std::vector<std::string> solution_path = solve_hippodrome(initial_board, target);
         auto end = std::chrono::high_resolution_clock::now();
 
         std::chrono::duration<double, std::milli> duration = end - start;
@@ -163,31 +265,43 @@ Range parse_range(const std::string& range_str) {
 }
 
 void print_usage(const char* program_name) {
-    std::cout << "Usage: " << program_name << " [range] [threads]\n"
+    std::cout << "Usage: " << program_name << " [range] [threads] [target]\n"
               << "Examples:\n"
-              << "  " << program_name << "           # Process first 5 configs (default), single-threaded\n"
-              << "  " << program_name << " 10        # Process only config 10, single-threaded\n"
-              << "  " << program_name << " 5->10     # Process configs 5 to 10 (inclusive), single-threaded\n"
-              << "  " << program_name << " 5-10      # Process configs 5 to 10 (inclusive), single-threaded\n"
-              << "  " << program_name << " 5..10     # Process configs 5 to 10 (inclusive), single-threaded\n"
-              << "  " << program_name << " 5->10 4   # Process configs 5 to 10 using 4 threads\n"
-              << "  " << program_name << " all 8     # Process all configs using 8 threads\n"
-              << "  " << program_name << " all       # Process all configs, single-threaded\n"
+              << "  " << program_name << "                    # Process first 5 configs, single-threaded, top-row target\n"
+              << "  " << program_name << " 10                 # Process only config 10, single-threaded, top-row target\n"
+              << "  " << program_name << " 5->10              # Process configs 5 to 10 (inclusive), single-threaded, top-row target\n"
+              << "  " << program_name << " 5-10               # Process configs 5 to 10 (inclusive), single-threaded, top-row target\n"
+              << "  " << program_name << " 5..10              # Process configs 5 to 10 (inclusive), single-threaded, top-row target\n"
+              << "  " << program_name << " 5->10 4            # Process configs 5 to 10 using 4 threads, top-row target\n"
+              << "  " << program_name << " all 8              # Process all configs using 8 threads, top-row target\n"
+              << "  " << program_name << " all 1 first-column # Process all configs, single-threaded, first-column target\n"
+              << "  " << program_name << " 0-99 4 bottom-row  # Process configs 0-99, 4 threads, bottom-row target\n"
+              << "  " << program_name << " 0-99 4 \"0,4,8,12\" # Process configs 0-99, 4 threads, custom target positions\n"
+              << "\nTarget options:\n"
+              << "  top-row        # Knights must reach positions 0,1,2,3 (default)\n"
+              << "  bottom-row     # Knights must reach positions 12,13,14,15\n"
+              << "  first-column   # Knights must reach positions 0,4,8,12\n"
+              << "  last-column    # Knights must reach positions 3,7,11,15\n"
+              << "  \"0,1,4,5\"      # Custom positions (must be exactly 4 positions)\n"
               << std::endl;
 }
 
 // --- Heuristics and Moves ---
-const int TOP_ROW_PENALTY = 100; // Define a penalty for non-knight pieces in the top row
+const int TARGET_PENALTY = 100; // Define a penalty for non-knight pieces in target positions
 
-int calculate_heuristic(const std::string& board) {
-    int knight_moves_to_row_0[] = {0, 2, 1, 2}; // Simplified heuristic
+int calculate_heuristic(const std::string& board, const Target& target) {
     int total_heuristic = 0;
+
+    // Create a set of target positions for quick lookup
+    std::unordered_set<int> target_positions(target.positions.begin(), target.positions.end());
 
     for (int i = 0; i < 16; ++i) {
         if (board[i] == 'N') {
-            total_heuristic += knight_moves_to_row_0[i / 4];
-        } else if (i < 4 && board[i] != 'x') { // Check if non-knight piece is in the top row (indices 0-3), 'x' represents empty
-            total_heuristic += TOP_ROW_PENALTY;
+            // Calculate minimum distance from this knight to any target position
+            total_heuristic += knight_distance_to_targets(i, target);
+        } else if (target_positions.count(i) && board[i] != 'x') {
+            // Penalty for non-knight pieces in target positions
+            total_heuristic += TARGET_PENALTY;
         }
     }
 
@@ -253,20 +367,26 @@ void print_board(const std::string& board_str) {
 }
 
 // --- A* Solver ---
-std::vector<std::string> solve_hippodrome(const std::string& initial_board_str) {
+std::vector<std::string> solve_hippodrome(const std::string& initial_board_str, const Target& target) {
     if (initial_board_str.length() != 16) {
         std::cerr << "Error: Input string must be 16 characters long." << std::endl;
         return {};
     }
 
-    auto is_goal_state = [](const std::string& board) {
-        return board.substr(0, 4) == "NNNN";
+    auto is_goal_state = [&target](const std::string& board) {
+        // Check if all target positions contain knights
+        for (int pos : target.positions) {
+            if (board[pos] != 'N') {
+                return false;
+            }
+        }
+        return true;
     };
 
     std::priority_queue<State, std::vector<State>, std::greater<State>> pq;
     std::unordered_set<std::string> visited;
 
-    int initial_heuristic = calculate_heuristic(initial_board_str);
+    int initial_heuristic = calculate_heuristic(initial_board_str, target);
     pq.push({initial_heuristic, 0, {initial_board_str}, initial_board_str});
 
     while (!pq.empty()) {
@@ -285,7 +405,7 @@ std::vector<std::string> solve_hippodrome(const std::string& initial_board_str) 
         int new_g_score = current.g_score + 1;
         for (const auto& next_board : get_next_states(current.board)) {
             if (!visited.count(next_board)) {
-                int heuristic = calculate_heuristic(next_board);
+                int heuristic = calculate_heuristic(next_board, target);
                 int new_f_score = new_g_score + heuristic;
                 std::vector<std::string> new_path = current.path;
                 new_path.push_back(next_board);
@@ -348,8 +468,15 @@ void save_batch_to_csv(const std::vector<std::tuple<int, std::string, std::vecto
         return;
     }
 
-    std::filesystem::create_directory("solutions_csv");
-    std::ofstream file(std::filesystem::path("solutions_csv") / filename);
+    // Create solutions_csv directory (manually handle cross-platform)
+    #ifdef _WIN32
+        system("mkdir solutions_csv 2>nul");
+    #else
+        system("mkdir -p solutions_csv");
+    #endif
+    
+    std::string full_path = "solutions_csv/" + filename;
+    std::ofstream file(full_path);
 
     file << "ID,Initial Board,Solution Path,Moves,Time (ms)\n";
     for (const auto& sol : solutions) {
@@ -360,7 +487,7 @@ void save_batch_to_csv(const std::vector<std::tuple<int, std::string, std::vecto
         }
         file << "," << std::get<3>(sol) << "," << std::get<4>(sol) << "\n";
     }
-    std::cout << "Solutions saved to " << (std::filesystem::path("solutions_csv") / filename) << std::endl;
+    std::cout << "Solutions saved to " << full_path << std::endl;
 }
 
 // --- Main ---
@@ -374,6 +501,7 @@ int main(int argc, char* argv[]) {
     std::string range_description = "first 5";
     std::string output_filename = "first_5_solutions.csv";
     int num_threads = 1; // Default: single-threaded
+    Target target = Targets::TOP_ROW; // Default: top-row target
     
     if (argc > 1) {
         std::string arg = argv[1];
@@ -428,6 +556,18 @@ int main(int argc, char* argv[]) {
         }
     }
     
+    // Parse target if provided
+    if (argc > 3) {
+        target = parse_target(argv[3]);
+        // Add target to output filename
+        size_t dot_pos = output_filename.rfind('.');
+        if (dot_pos != std::string::npos) {
+            output_filename = output_filename.substr(0, dot_pos) + "_" + target.name + output_filename.substr(dot_pos);
+        } else {
+            output_filename += "_" + target.name;
+        }
+    }
+    
     // Validate range bounds
     if (range.start < 0 || range.end >= (int)configs.size() || range.start > range.end) {
         std::cerr << "Error: Range " << range.start << " to " << range.end 
@@ -445,6 +585,12 @@ int main(int argc, char* argv[]) {
     std::cout << "Processing " << range_description << " (" << total_to_process 
               << " configs) out of " << configs.size() << " total configs" << std::endl;
     std::cout << "Using " << num_threads << " thread(s)" << std::endl;
+    std::cout << "Target: " << target.name << " (positions: ";
+    for (size_t i = 0; i < target.positions.size(); ++i) {
+        std::cout << target.positions[i];
+        if (i < target.positions.size() - 1) std::cout << ",";
+    }
+    std::cout << ")" << std::endl;
     std::cout << "Output file: " << output_filename << "\n" << std::endl;
 
     // Reset global counters
@@ -466,7 +612,7 @@ int main(int argc, char* argv[]) {
             print_board(initial_board);
 
             auto start = std::chrono::high_resolution_clock::now();
-            std::vector<std::string> solution_path = solve_hippodrome(initial_board);
+            std::vector<std::string> solution_path = solve_hippodrome(initial_board, target);
             auto end = std::chrono::high_resolution_clock::now();
 
             std::chrono::duration<double, std::milli> duration = end - start;
@@ -508,7 +654,8 @@ int main(int argc, char* argv[]) {
                                thread_end, 
                                thread_id, 
                                std::ref(all_solutions),
-                               total_to_process);
+                               total_to_process,
+                               std::cref(target));
             
             current_start = thread_end + 1;
         }

@@ -11,11 +11,17 @@ g++ -std=c++17 -O3 -pthread hippodrome_solver_working.cpp -o solver
 
 ### 2. **Run the Solver**
 ```bash
-# Solve first 100 configurations with 4 threads
-./solver filtered_hippodrome_configs.csv output.csv 0-99 4
+# Solve first 100 configurations with 4 threads (default: top-row target)
+./solver 0-99 4
+
+# Solve with first-column target
+./solver 0-99 4 first-column
+
+# Solve with custom target positions
+./solver 0-99 4 "0,1,4,5"
 
 # Solve all configurations with maximum threads
-./solver filtered_hippodrome_configs.csv all_solutions.csv 0-415800 14
+./solver 0-415800 14
 ```
 
 ### 3. **Start the Web Explorer**
@@ -36,12 +42,34 @@ Open http://localhost:5000 in your browser! 🎉
 
 ### **Solver Command Line**
 ```bash
-# Basic usage
-./solver input.csv output.csv
+# Basic usage (default: first 5 configs, top-row target)
+./solver
 
 # Solve specific range with threads
-./solver input.csv output.csv 1000-2000 8
+./solver 1000-2000 8
 
-# Process all configurations
-./solver input.csv output.csv 0-415800 12
+# Process all configurations with different targets
+./solver 0-415800 12 top-row          # Knights must reach positions 0,1,2,3
+./solver 0-415800 12 bottom-row       # Knights must reach positions 12,13,14,15
+./solver 0-415800 12 first-column     # Knights must reach positions 0,4,8,12
+./solver 0-415800 12 last-column      # Knights must reach positions 3,7,11,15
+./solver 0-415800 12 "0,1,4,5"        # Custom target positions
+
+# Single configuration with specific target
+./solver 42 1 first-column
+```
+
+### **Target Options**
+- **`top-row`** (default): Knights must reach the top row (positions 0,1,2,3)
+- **`bottom-row`**: Knights must reach the bottom row (positions 12,13,14,15) 
+- **`first-column`**: Knights must reach the first column (positions 0,4,8,12)
+- **`last-column`**: Knights must reach the last column (positions 3,7,11,15)
+- **Custom positions**: Specify 4 exact positions like `"0,1,4,5"` or `"2,6,10,14"`
+
+### **Board Position Layout**
+```
+ 0  1  2  3
+ 4  5  6  7
+ 8  9 10 11
+12 13 14 15
 ```

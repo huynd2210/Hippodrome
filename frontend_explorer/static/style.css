@@ -356,6 +356,22 @@ input[type="range"]::-webkit-slider-thumb:active {
     }
 }
 
+/* Target highlighting for selected targets */
+.square.target-highlight {
+    background: linear-gradient(45deg, #ffd700, #ffed4e) !important;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    position: relative;
+}
+
+.square.target-highlight::after {
+    content: '🎯';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
 .square.highlight {
     box-shadow: inset 0 0 0 4px #ffd700;
     animation: pulse 1s infinite;

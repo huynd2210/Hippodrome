@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Hippodrome Explorer - Instant Load</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin: 0;
+        }
+        .subtitle {
+            color: #666;
+            margin: 10px 0;
+        }
+        .quick-start {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        .main-content {
+            display: flex;
+            gap: 20px;
+        }
+        .control-panel {
+            width: 300px;
+        }
+        .game-area {
+            flex: 1;
+        }
+        .section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        .chess-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+            max-width: 400px;
+            margin: 20px auto;
+            background: #8B4513;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .board-square {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border-radius: 4px;
+            position: relative;
+        }
+        .light-square {
+            background: #F0D9B5;
+        }
+        .dark-square {
+            background: #B58863;
+        }
+        .target-square {
+            box-shadow: inset 0 0 0 3px #28a745;
+            background: rgba(40, 167, 69, 0.1) !important;
+        }
+        .target-square::after {
+            content: '🎯';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 10px;
+            opacity: 0.7;
+        }
+        .playback-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .playback-controls button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .info-item {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        .label {
+            font-size: 12px;
+            color: #6c757d;
+            display: block;
+        }
+        .hidden {
+            display: none;
+        }
+        .loading {
+            color: #6c757d;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎯 Hippodrome Solution Explorer</h1>
+            <p class="subtitle">Instant Loading - Zero Wait Time!</p>
+        </header>
+
+        <div class="quick-start">
+            <h3>🚀 Quick Start</h3>
+            <p>Click any button below to begin exploring. No waiting, no loading screens!</p>
+            <button class="btn btn-success" onclick="loadTargets()">🎯 Load Targets</button>
+            <button class="btn" onclick="showExample('first-column')">📍 First Column Example</button>
+            <button class="btn" onclick="showExample('last-column')">📍 Last Column Example</button>
+        </div>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <div class="section">
+                    <h3>🎯 Target Selection</h3>
+                    <div id="target-content">
+                        <p class="loading">Click "Load Targets" to see available targets</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🔍 Current Solution</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="label">ID:</span>
+                            <span id="current-id">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Target:</span>
+                            <span id="current-target">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Moves:</span>
+                            <span id="current-moves">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Step:</span>
+                            <span id="current-step">- / -</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="game-area">
+                <div class="section">
+                    <h3 id="board-title">Hippodrome Puzzle Board</h3>
+                    <p id="board-description">Click an example above to see the puzzle in action!</p>
+                    
+                    <div id="chess-board" class="chess-board">
+                        <!-- Empty board initially -->
+                        <div class="board-square light-square"></div>
+                        <div class="board-square dark-square"></div>
+                        <div class="board-square light-square"></div>
+                        <div class="board-square dark-square"></div>
+                        <div class="board-square dark-square"></div>
+                        <div class="board-square light-square"></div>
+                        <div class="board-square dark-square"></div>
+                        <div class="board-square light-square"></div>
+                        <div class="board-square light-square"></div>
+                        <div class="board-square dark-square"></div>
+                        <div class="board-square light-square"></div>
+                        <div class="board-square dark-square"></div>
+                        <div class="board-square dark-square"></div>
+                        <div class="board-square light-square"></div>
+                        <div class="board-square dark-square"></div>
+                        <div class="board-square light-square"></div>
+                    </div>
+
+                    <div class="playback-controls">
+                        <button onclick="previousStep()">⏮</button>
+                        <button onclick="togglePlay()" id="play-btn">▶️</button>
+                        <button onclick="nextStep()">⏭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSolution = null;
+        let currentStep = 0;
+        let isPlaying = false;
+        let playTimer = null;
+
+        async function loadTargets() {
+            document.getElementById('target-content').innerHTML = '<p class="loading">Loading targets...</p>';
+            
+            try {
+                const response = await fetch('/api/quick-targets');
+                const data = await response.json();
+                
+                let html = '<p>Select a target:</p>';
+                data.targets.forEach(target => {
+                    html += `<button class="btn" style="display:block; width:100%; margin:5px 0;" onclick="showExample('${target.name}')">${target.name}</button>`;
+                });
+                
+                document.getElementById('target-content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('target-content').innerHTML = '<p>Error loading targets</p>';
+            }
+        }
+
+        async function showExample(target) {
+            document.getElementById('board-description').innerHTML = `<p class="loading">Loading ${target} example...</p>`;
+            
+            try {
+                const response = await fetch(`/api/quick-random?target=${target}`);
+                const data = await response.json();
+                
+                currentSolution = data;
+                currentStep = 0;
+                
+                updateDisplay();
+                
+                document.getElementById('board-title').textContent = `${target} Example`;
+                document.getElementById('board-description').textContent = `Goal: ${data.target_name} - Move knights to positions ${data.target_positions.join(', ')}`;
+                
+            } catch (error) {
+                document.getElementById('board-description').textContent = 'Error loading example';
+            }
+        }
+
+        function updateDisplay() {
+            if (!currentSolution) return;
+            
+            // Update info
+            document.getElementById('current-id').textContent = currentSolution.id;
+            document.getElementById('current-target').textContent = currentSolution.target_name;
+            document.getElementById('current-moves').textContent = currentSolution.moves;
+            document.getElementById('current-step').textContent = `${currentStep + 1} / ${currentSolution.total_steps}`;
+            
+            // Update board
+            const boardState = currentSolution.solution_path[currentStep];
+            const squares = document.querySelectorAll('.board-square');
+            const pieces = {
+                'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
+                'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟',
+                'x': ''
+            };
+            
+            // Clear target highlighting
+            squares.forEach(square => square.classList.remove('target-square'));
+            
+            // Update pieces
+            for (let i = 0; i < 16; i++) {
+                squares[i].textContent = pieces[boardState[i]] || '';
+                
+                // Highlight target squares
+                if (currentSolution.target_positions.includes(i)) {
+                    squares[i].classList.add('target-square');
+                }
+            }
+        }
+
+        function nextStep() {
+            if (currentSolution && currentStep < currentSolution.solution_path.length - 1) {
+                currentStep++;
+                updateDisplay();
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                updateDisplay();
+            }
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                clearInterval(playTimer);
+                isPlaying = false;
+                document.getElementById('play-btn').textContent = '▶️';
+            } else {
+                isPlaying = true;
+                document.getElementById('play-btn').textContent = '⏸️';
+                playTimer = setInterval(() => {
+                    if (currentSolution && currentStep < currentSolution.solution_path.length - 1) {
+                        nextStep();
+                    } else {
+                        togglePlay(); // Stop when done
+                    }
+                }, 1000);
+            }
+        }
+    </script>
+</body>
+</html> 
