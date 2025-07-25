@@ -1,0 +1,2 @@
+"solutions_csv/*" filter=lfs diff=lfs merge=lfs -text
+"frontend_explorer/hippodrome_solutions.db" filter=lfs diff=lfs merge=lfs -text
