@@ -20,6 +20,15 @@
             <div class="control-panel">
                 <div class="search-section">
                     <h3>🔍 Explore Solutions</h3>
+                    
+                    <!-- Target Selection (minimal addition) -->
+                    <div class="input-group">
+                        <label for="target-select">Target:</label>
+                        <select id="target-select">
+                            <option value="top-row">top-row</option>
+                        </select>
+                    </div>
+                    
                     <div class="search-controls">
                         <div class="input-group">
                             <label for="config-id">Configuration ID:</label>
@@ -42,12 +51,21 @@
                         <div id="piece-palette" class="piece-palette hidden">
                             <h4>Select Piece to Place:</h4>
                             <div class="piece-buttons">
-                                <button class="piece-btn active" data-piece="K">♔ King</button>
-                                <button class="piece-btn" data-piece="R">♖ Rook</button>
-                                <button class="piece-btn" data-piece="B">♗ Bishop</button>
-                                <button class="piece-btn" data-piece="N">♘ Knight</button>
+                                <button class="piece-btn active" data-piece="K">
+                                    <img src="https://lichess1.org/assets/piece/cburnett/wK.svg" class="piece-icon"> King
+                                </button>
+                                <button class="piece-btn" data-piece="R">
+                                    <img src="https://lichess1.org/assets/piece/cburnett/wR.svg" class="piece-icon"> Rook
+                                </button>
+                                <button class="piece-btn" data-piece="B">
+                                    <img src="https://lichess1.org/assets/piece/cburnett/wB.svg" class="piece-icon"> Bishop
+                                </button>
+                                <button class="piece-btn" data-piece="N">
+                                    <img src="https://lichess1.org/assets/piece/cburnett/wN.svg" class="piece-icon"> Knight
+                                </button>
                                 <button class="piece-btn" data-piece="x">❌ Empty</button>
                             </div>
+                            
                             <div class="editor-actions">
                                 <button id="clear-board-btn" class="btn-warning">🧹 Clear Board</button>
                                 <button id="search-board-btn" class="btn-success">🔍 Search This Board</button>
@@ -133,7 +151,7 @@
         </div>
 
         <!-- Loading Overlay -->
-        <div id="loading-overlay" class="loading-overlay">
+        <div id="loading-overlay" class="loading-overlay hidden">
             <div class="spinner"></div>
             <p>Loading solution...</p>
         </div>

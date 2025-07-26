@@ -4,21 +4,40 @@ import sqlite3
 import os
 import random
 import json
-from functools import lru_cache
 
 app = Flask(__name__)
 CORS(app)
 
-# Database path
-DB_PATH = "hippodrome_solutions.db"
+# Database paths - using separate databases per target
+TARGETS_INDEX_DB = "targets_index.db"
 
-def get_db_connection():
-    """Get a database connection with row factory for dict-like access"""
-    if not os.path.exists(DB_PATH):
-        raise FileNotFoundError(f"Database not found: {DB_PATH}")
+def get_target_db_connection(target_name):
+    """Get a database connection for a specific target"""
+    # Map targets to their actual database files
+    target_db_map = {
+        'top-row': 'hippodrome_top_row.db',  # Original database has top-row solutions
+        'first-column': 'hippodrome_first_column.db',
+        'last-column': 'hippodrome_last_column.db',
+        'corners': 'hippodrome_corners.db',
+        'center': 'hippodrome_center.db'  # Use the dedicated center database
+    }
     
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row  # This allows dict-like access to rows
+    db_file = target_db_map.get(target_name, f"hippodrome_{target_name.replace('-', '_')}.db")
+    
+    if not os.path.exists(db_file):
+        raise FileNotFoundError(f"Target database not found: {db_file}")
+    
+    conn = sqlite3.connect(db_file)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def get_targets_index():
+    """Get the targets index database connection"""
+    if not os.path.exists(TARGETS_INDEX_DB):
+        raise FileNotFoundError(f"Targets index not found: {TARGETS_INDEX_DB}")
+    
+    conn = sqlite3.connect(TARGETS_INDEX_DB)
+    conn.row_factory = sqlite3.Row
     return conn
 
 def parse_solution_path(solution_path_str):
@@ -32,11 +51,26 @@ def index():
     """Serve the main application page"""
     return render_template('index.html')
 
+@app.route('/api/targets')
+def get_targets():
+    """Get all available targets"""
+    try:
+        conn = get_targets_index()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM targets ORDER BY name')
+        targets = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return jsonify(targets)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/solution/<int:config_id>')
 def get_solution(config_id):
     """Get a specific solution by configuration ID"""
+    target = request.args.get('target', 'top-row')
+    
     try:
-        conn = get_db_connection()
+        conn = get_target_db_connection(target)
         cursor = conn.cursor()
         
         cursor.execute(
@@ -48,67 +82,67 @@ def get_solution(config_id):
         conn.close()
         
         if not row:
-            return jsonify({'error': f'Solution not found for ID {config_id}'}), 404
+            return jsonify({'error': f'Solution not found for config {config_id} with target {target}'}), 404
         
-        solution_path = parse_solution_path(row['solution_path'])
+        # Parse the solution path
+        solution_steps = parse_solution_path(row['solution_path'])
         
         return jsonify({
             'id': row['id'],
             'initial_board': row['initial_board'],
-            'solution_path': solution_path,
+            'solution_path': solution_steps,
             'moves': row['moves'],
             'time_ms': row['time_ms'],
-            'total_steps': len(solution_path)
+            'target': target
         })
         
     except Exception as e:
-        return jsonify({'error': f'Database error: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/random')
 def get_random_solution():
-    """Get a random solution from the database"""
+    """Get a random solution"""
+    target = request.args.get('target', 'top-row') 
+    
     try:
-        conn = get_db_connection()
+        conn = get_target_db_connection(target)
         cursor = conn.cursor()
         
-        # Get a random solution using RANDOM()
-        cursor.execute(
-            'SELECT id, initial_board, solution_path, moves, time_ms FROM solutions ORDER BY RANDOM() LIMIT 1'
-        )
-        
+        # Get random solution
+        cursor.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions ORDER BY RANDOM() LIMIT 1')
         row = cursor.fetchone()
         conn.close()
         
         if not row:
-            return jsonify({'error': 'No solutions found'}), 404
+            return jsonify({'error': f'No solutions found for target {target}'}), 404
         
-        solution_path = parse_solution_path(row['solution_path'])
+        # Parse the solution path
+        solution_steps = parse_solution_path(row['solution_path'])
         
         return jsonify({
             'id': row['id'],
             'initial_board': row['initial_board'],
-            'solution_path': solution_path,
+            'solution_path': solution_steps,
             'moves': row['moves'],
             'time_ms': row['time_ms'],
-            'total_steps': len(solution_path)
+            'target': target
         })
         
     except Exception as e:
-        return jsonify({'error': f'Database error: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/search')
 def search_solutions():
-    """Search solutions with filters"""
+    """Search solutions by criteria"""
+    target = request.args.get('target', 'top-row')
+    min_moves = request.args.get('min_moves', type=int)
+    max_moves = request.args.get('max_moves', type=int)
+    limit = min(request.args.get('limit', 10, type=int), 100)  # Cap at 100
+    
     try:
-        # Get query parameters
-        min_moves = request.args.get('min_moves', type=int)
-        max_moves = request.args.get('max_moves', type=int)
-        limit = request.args.get('limit', 10, type=int)
-        
-        conn = get_db_connection()
+        conn = get_target_db_connection(target)
         cursor = conn.cursor()
         
-        # Build query with filters
         query = 'SELECT id, initial_board, moves, time_ms FROM solutions WHERE 1=1'
         params = []
         
@@ -120,226 +154,107 @@ def search_solutions():
             query += ' AND moves <= ?'
             params.append(max_moves)
         
-        # Get total count matching criteria
-        count_query = query.replace('SELECT id, initial_board, moves, time_ms FROM solutions', 'SELECT COUNT(*) FROM solutions')
-        cursor.execute(count_query, params)
-        total_found = cursor.fetchone()[0]
-        
-        # Add random ordering and limit
-        query += ' ORDER BY RANDOM() LIMIT ?'
+        query += ' ORDER BY moves ASC LIMIT ?'
         params.append(limit)
         
         cursor.execute(query, params)
-        rows = cursor.fetchall()
+        results = [dict(row) for row in cursor.fetchall()]
         conn.close()
         
-        # Format results
-        results = []
-        for row in rows:
-            results.append({
-                'id': row['id'],
-                'initial_board': row['initial_board'],
-                'moves': row['moves'],
-                'time_ms': row['time_ms']
-            })
-        
-        return jsonify({
-            'results': results,
-            'total_found': total_found,
-            'showing': len(results)
-        })
+        return jsonify(results)
         
     except Exception as e:
-        return jsonify({'error': f'Database error: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/stats')
 def get_statistics():
     """Get database statistics"""
+    target = request.args.get('target', 'top-row')
+    
     try:
-        conn = get_db_connection()
+        conn = get_target_db_connection(target)
         cursor = conn.cursor()
         
-        # Get basic statistics
-        cursor.execute('SELECT COUNT(*) FROM solutions')
-        total_solutions = cursor.fetchone()[0]
+        # Basic stats
+        cursor.execute('SELECT COUNT(*) as total FROM solutions')
+        total = cursor.fetchone()['total']
         
-        cursor.execute('SELECT MIN(moves), MAX(moves), AVG(moves) FROM solutions')
-        min_moves, max_moves, avg_moves = cursor.fetchone()
+        cursor.execute('SELECT AVG(moves) as avg_moves, MIN(moves) as min_moves, MAX(moves) as max_moves FROM solutions')
+        moves_stats = cursor.fetchone()
         
-        cursor.execute('SELECT AVG(moves) FROM (SELECT moves FROM solutions ORDER BY moves LIMIT 2 - (SELECT COUNT(*) FROM solutions) % 2 OFFSET (SELECT (COUNT(*) - 1) / 2 FROM solutions))')
-        median_moves = cursor.fetchone()[0]
+        cursor.execute('SELECT AVG(time_ms) as avg_time FROM solutions')
+        time_stats = cursor.fetchone()
         
-        cursor.execute('SELECT MIN(time_ms), MAX(time_ms), AVG(time_ms) FROM solutions')
-        min_time, max_time, avg_time = cursor.fetchone()
-        
-        # Get move distribution
-        cursor.execute('SELECT moves, COUNT(*) FROM solutions GROUP BY moves ORDER BY moves')
-        move_distribution = {str(row[0]): row[1] for row in cursor.fetchall()}
+        # Move distribution
+        cursor.execute('SELECT moves, COUNT(*) as count FROM solutions GROUP BY moves ORDER BY moves')
+        move_distribution = [{'moves': row['moves'], 'count': row['count']} for row in cursor.fetchall()]
         
         conn.close()
         
-        stats = {
-            'total_solutions': total_solutions,
-            'move_stats': {
-                'min': min_moves,
-                'max': max_moves,
-                'mean': avg_moves,
-                'median': median_moves
-            },
-            'time_stats': {
-                'min': min_time,
-                'max': max_time,
-                'mean': avg_time
-            },
+        return jsonify({
+            'target': target,
+            'total_solutions': total,
+            'avg_moves': round(moves_stats['avg_moves'], 2),
+            'min_moves': moves_stats['min_moves'],
+            'max_moves': moves_stats['max_moves'],
+            'avg_time_ms': round(time_stats['avg_time'], 2),
             'move_distribution': move_distribution
-        }
-        
-        return jsonify(stats)
-        
-    except Exception as e:
-        return jsonify({'error': f'Database error: {str(e)}'}), 500
-
-@app.route('/api/extremes')
-def get_extreme_solutions():
-    """Get the most interesting solutions (hardest, fastest, etc.)"""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Get extreme cases
-        cursor.execute('SELECT id, initial_board, moves, time_ms FROM solutions ORDER BY moves DESC LIMIT 1')
-        hardest = cursor.fetchone()
-        
-        cursor.execute('SELECT id, initial_board, moves, time_ms FROM solutions ORDER BY moves ASC LIMIT 1')
-        easiest = cursor.fetchone()
-        
-        cursor.execute('SELECT id, initial_board, moves, time_ms FROM solutions ORDER BY time_ms ASC LIMIT 1')
-        fastest = cursor.fetchone()
-        
-        cursor.execute('SELECT id, initial_board, moves, time_ms FROM solutions ORDER BY time_ms DESC LIMIT 1')
-        slowest = cursor.fetchone()
-        
-        conn.close()
-        
-        def format_solution(row):
-            return {
-                'id': row['id'],
-                'initial_board': row['initial_board'],
-                'moves': row['moves'],
-                'time_ms': row['time_ms']
-            }
-        
-        return jsonify({
-            'hardest': format_solution(hardest),
-            'easiest': format_solution(easiest),
-            'fastest': format_solution(fastest),
-            'slowest': format_solution(slowest)
         })
         
     except Exception as e:
-        return jsonify({'error': f'Database error: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/health')
-def health_check():
-    """Health check endpoint"""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT COUNT(*) FROM solutions')
-        count = cursor.fetchone()[0]
-        conn.close()
-        
-        return jsonify({
-            'status': 'healthy',
-            'database': 'connected',
-            'total_solutions': count
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'status': 'unhealthy',
-            'error': str(e)
-        }), 500
-
-@app.route('/api/search_by_board', methods=['POST'])
+@app.route('/api/search_by_board')
 def search_by_board():
-    """Search for solutions by board configuration"""
+    """Search for solutions by initial board state"""
+    board_state = request.args.get('board', '')
+    target = request.args.get('target', 'top-row')
+    
+    if len(board_state) != 16:
+        return jsonify({'error': 'Board state must be exactly 16 characters'}), 400
+    
     try:
-        data = request.get_json()
-        board_state = data.get('board_state')
-        
-        if not board_state:
-            return jsonify({'error': 'board_state is required'}), 400
-            
-        if len(board_state) != 16:
-            return jsonify({'error': 'board_state must be exactly 16 characters'}), 400
-        
-        conn = get_db_connection()
+        conn = get_target_db_connection(target)
         cursor = conn.cursor()
         
-        # Search for exact matches
         cursor.execute(
-            'SELECT id, initial_board, moves FROM solutions WHERE initial_board = ? LIMIT 10', 
+            'SELECT id, initial_board, solution_path, moves, time_ms FROM solutions WHERE initial_board = ?',
             (board_state,)
         )
-        rows = cursor.fetchall()
+        
+        row = cursor.fetchone()
         conn.close()
         
-        # Check if board exists but has no solution
-        if rows and all(row['moves'] == -1 for row in rows):
-            return jsonify({
-                'results': [],
-                'total_found': 0,
-                'search_board': board_state,
-                'message': 'Board configuration found but has no solution',
-                'unsolvable': True
-            })
+        if not row:
+            return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
         
-        # Filter out unsolvable configurations (moves = -1)
-        results = []
-        for row in rows:
-            if row['moves'] != -1:  # Only include solvable configurations
-                results.append({
-                    'id': row['id'],
-                    'initial_board': row['initial_board'],
-                    'moves': row['moves']
-                })
+        # Parse the solution path
+        solution_steps = parse_solution_path(row['solution_path'])
         
         return jsonify({
-            'results': results,
-            'total_found': len(results),
-            'search_board': board_state,
-            'message': f'Found {len(results)} solvable configuration(s)' if results else 'No solvable configurations found'
+            'id': row['id'],
+            'initial_board': row['initial_board'],
+            'solution_path': solution_steps,
+            'moves': row['moves'],
+            'time_ms': row['time_ms'],
+            'target': target
         })
         
     except Exception as e:
-        return jsonify({'error': f'Search failed: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/health')
+def health_check():
+    """Simple health check endpoint"""
+    return jsonify({'status': 'ready'})
 
 if __name__ == '__main__':
-    print("🎯 Hippodrome Solution Explorer - SQLite Backend API")
-    print("=" * 60)
-    
-    if not os.path.exists(DB_PATH):
-        print(f"❌ Database not found: {DB_PATH}")
-        print("🔧 Please run 'python create_database.py' first to create the database.")
+    # Start with minimal initialization - just check that targets index exists
+    if not os.path.exists(TARGETS_INDEX_DB):
+        print(f"❌ Error: {TARGETS_INDEX_DB} not found!")
+        print("Please run: python create_target_databases.py")
         exit(1)
     
-    try:
-        # Test database connection
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT COUNT(*) FROM solutions')
-        count = cursor.fetchone()[0]
-        conn.close()
-        
-        print(f"✅ Database connected successfully!")
-        print(f"📊 Loaded {count:,} solutions from SQLite database")
-        print(f"🚀 Starting server at http://localhost:5000")
-        print(f"💾 Database size: {os.path.getsize(DB_PATH) / (1024*1024):.1f} MB")
-        
-        app.run(debug=True, host='0.0.0.0', port=5000)
-        
-    except Exception as e:
-        print(f"❌ Failed to connect to database: {e}")
-        print("🔧 Please run 'python create_database.py' first to create the database.")
-        exit(1) 
+    print("🎯 Hippodrome Explorer (Original Enhanced) starting...")
+    print("✅ Target databases ready for on-demand loading")
+    app.run(debug=True, host='0.0.0.0', port=5000) 

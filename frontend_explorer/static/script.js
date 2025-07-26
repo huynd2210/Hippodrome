@@ -1,4 +1,4 @@
-// Hippodrome Solution Explorer - JavaScript
+// Hippodrome Solution Explorer - Enhanced Original JavaScript
 class HippodromeExplorer {
     constructor() {
         this.currentSolution = null;
@@ -6,6 +6,8 @@ class HippodromeExplorer {
         this.isPlaying = false;
         this.playbackTimer = null;
         this.playbackSpeed = 1000; // milliseconds
+        this.currentTarget = 'top-row'; // Default target
+        this.availableTargets = [];
         
         // Editor state
         this.editMode = false;
@@ -15,6 +17,9 @@ class HippodromeExplorer {
         this.initializeElements();
         this.bindEventListeners();
         this.initializeBoard();
+        
+        // Load everything in parallel for good UX
+        this.loadTargets();
         this.loadStatistics();
         this.loadRandomSolution(); // Start with a random solution
         
@@ -25,6 +30,9 @@ class HippodromeExplorer {
     initializeElements() {
         // Board
         this.board = document.getElementById('chess-board');
+        
+        // Target elements
+        this.targetSelect = document.getElementById('target-select');
         
         // Controls
         this.playPauseBtn = document.getElementById('play-pause-btn');
@@ -48,66 +56,70 @@ class HippodromeExplorer {
         this.clearBoardBtn = document.getElementById('clear-board-btn');
         this.searchBoardBtn = document.getElementById('search-board-btn');
         this.exitEditBtn = document.getElementById('exit-edit-btn');
-        this.playbackSection = document.getElementById('playback-section');
-        this.boardTitle = document.getElementById('board-title');
-        this.boardModeIndicator = document.getElementById('board-mode-indicator');
-
         
-        // Info displays
+        // UI elements
         this.currentId = document.getElementById('current-id');
         this.currentMoves = document.getElementById('current-moves');
         this.currentStepDisplay = document.getElementById('current-step');
+        this.boardModeText = document.getElementById('board-mode-indicator');
         this.statsContent = document.getElementById('stats-content');
-        
-        // Overlays
         this.loadingOverlay = document.getElementById('loading-overlay');
         this.errorMessage = document.getElementById('error-message');
         this.errorText = document.getElementById('error-text');
-        this.closeError = document.getElementById('close-error');
+        this.closeErrorBtn = document.getElementById('close-error');
     }
 
     bindEventListeners() {
+        // Target selection
+        this.targetSelect.addEventListener('change', () => {
+            this.currentTarget = this.targetSelect.value;
+            this.highlightTargetSquares();
+            this.loadStatistics();
+            this.loadRandomSolution(); // Load new random solution for new target
+        });
+        
         // Playback controls
         this.playPauseBtn.addEventListener('click', () => this.togglePlayback());
         this.prevBtn.addEventListener('click', () => this.previousStep());
         this.nextBtn.addEventListener('click', () => this.nextStep());
-        this.firstBtn.addEventListener('click', () => this.goToFirstStep());
+        this.firstBtn.addEventListener('click', () => this.goToStep(0));
         this.lastBtn.addEventListener('click', () => this.goToLastStep());
-        
-        // Speed control - use both 'input' and 'change' events for better responsiveness
         this.speedSlider.addEventListener('input', () => this.updateSpeed());
-        this.speedSlider.addEventListener('change', () => this.updateSpeed());
         
         // Search controls
-        this.searchBtn.addEventListener('click', () => this.searchById());
-        this.configIdInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.searchById();
-        });
+        this.searchBtn.addEventListener('click', () => this.loadSolution());
         this.randomBtn.addEventListener('click', () => this.loadRandomSolution());
-
+        this.configIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.loadSolution();
+        });
+        
         // Editor controls
         this.editModeBtn.addEventListener('click', () => this.toggleEditMode());
-        this.exitEditBtn.addEventListener('click', () => this.exitEditMode());
         this.clearBoardBtn.addEventListener('click', () => this.clearBoard());
         this.searchBoardBtn.addEventListener('click', () => this.searchByBoard());
+        this.exitEditBtn.addEventListener('click', () => this.exitEditMode());
         
-        // Piece selection
+        // Piece palette
         this.pieceBtns.forEach(btn => {
-            btn.addEventListener('click', () => this.selectPiece(btn.dataset.piece));
+            btn.addEventListener('click', () => {
+                this.pieceBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.selectedPiece = btn.dataset.piece;
+            });
         });
         
         // Error handling
-        this.closeError.addEventListener('click', () => this.hideError());
+        this.closeErrorBtn.addEventListener('click', () => this.hideError());
     }
 
     initializeBoard() {
-        // Create 4x4 grid of squares
         this.board.innerHTML = '';
         for (let i = 0; i < 16; i++) {
             const square = document.createElement('div');
-            square.classList.add('square');
+            square.className = 'chess-square';
+            square.dataset.position = i;
             
-            // Alternate colors (chess board pattern)
+            // Add alternating colors
             const row = Math.floor(i / 4);
             const col = i % 4;
             if ((row + col) % 2 === 0) {
@@ -116,165 +128,319 @@ class HippodromeExplorer {
                 square.classList.add('dark');
             }
             
-            square.id = `square-${i}`;
-            
-            // Add click handler for edit mode
+            // Add click handler for editor
             square.addEventListener('click', () => this.handleSquareClick(i));
             
             this.board.appendChild(square);
         }
+        
+        // Initial target highlighting
+        this.highlightTargetSquares();
     }
 
-    displayBoard(boardState) {
-        // Lichess-style chess pieces (cburnett style - most popular)
-        const lichessPieces = {
-            'K': 'https://lichess1.org/assets/piece/cburnett/wK.svg',
-            'R': 'https://lichess1.org/assets/piece/cburnett/wR.svg',
-            'B': 'https://lichess1.org/assets/piece/cburnett/wB.svg',
-            'N': 'https://lichess1.org/assets/piece/cburnett/wN.svg'
-        };
+    async loadTargets() {
+        // Define targets directly with simplified descriptions
+        const targets = [
+            {
+                name: 'top-row',
+                positions: '0,1,2,3',
+                description: 'top-row'
+            },
+            {
+                name: 'first-column', 
+                positions: '0,4,8,12',
+                description: 'first-column'
+            },
+            {
+                name: 'last-column',
+                positions: '3,7,11,15', 
+                description: 'last-column'
+            },
+            {
+                name: 'center',
+                positions: '5,6,9,10',
+                description: 'center'
+            },
+            {
+                name: 'corners',
+                positions: '0,3,12,15',
+                description: 'corners'
+            }
+        ];
+        
+        this.availableTargets = targets;
+        this.populateTargetDropdown(targets);
+    }
 
-        for (let i = 0; i < 16; i++) {
-            const square = document.getElementById(`square-${i}`);
-            const piece = boardState[i];
-            
-            // Clear previous content and classes
-            square.innerHTML = '';
-            square.className = square.className.replace(/piece-\w+/g, '');
-            
-            if (piece !== 'x' && lichessPieces[piece]) {
-                // Create image element for Lichess piece
-                const img = document.createElement('img');
-                img.src = lichessPieces[piece];
-                img.className = `lichess-piece piece-${piece.toLowerCase()}`;
-                img.alt = piece;
-                img.style.width = '85%';
-                img.style.height = '85%';
-                img.style.objectFit = 'contain';
-                
-                // Add color class for potential future styling
-                square.classList.add(`piece-${piece.toLowerCase()}`);
-                square.appendChild(img);
+    populateTargetDropdown(targets) {
+        this.targetSelect.innerHTML = '';
+        
+        targets.forEach(target => {
+            const option = document.createElement('option');
+            option.value = target.name;
+            option.textContent = target.description;
+            if (target.name === this.currentTarget) {
+                option.selected = true;
             }
-            
-            // Remove previous highlights
-            square.classList.remove('highlight', 'goal-row');
-            
-            // Highlight goal row (top row) if it contains knights
-            if (i < 4 && piece === 'N') {
-                square.classList.add('goal-row');
-            }
+            this.targetSelect.appendChild(option);
+        });
+    }
+
+
+
+    highlightTargetSquares() {
+        // Remove existing highlights
+        document.querySelectorAll('.chess-square').forEach(square => {
+            square.classList.remove('target-highlight');
+        });
+        
+        // Add highlights for current target
+        const target = this.availableTargets.find(t => t.name === this.currentTarget);
+        if (target) {
+            const positions = target.positions.split(',').map(p => parseInt(p.trim()));
+            positions.forEach(pos => {
+                const square = document.querySelector(`[data-position="${pos}"]`);
+                if (square) {
+                    square.classList.add('target-highlight');
+                }
+            });
         }
     }
 
-    highlightMovedPiece(prevBoard, currentBoard) {
-        // Find the squares that changed and highlight them
-        for (let i = 0; i < 16; i++) {
-            const square = document.getElementById(`square-${i}`);
-            if (prevBoard && prevBoard[i] !== currentBoard[i]) {
-                square.classList.add('highlight');
-                // Remove highlight after animation
-                setTimeout(() => {
-                    square.classList.remove('highlight');
-                }, 1000);
-            }
+    async loadSolution() {
+        const configId = parseInt(this.configIdInput.value);
+        
+        if (isNaN(configId) || configId < 0 || configId > 415800) {
+            this.showError('Please enter a valid configuration ID (0-415800)');
+            return;
         }
-    }
-
-    async loadSolution(id) {
+        
         this.showLoading();
         try {
-            const response = await fetch(`/api/solution/${id}`);
-            if (!response.ok) {
-                throw new Error(`Solution not found for ID ${id}`);
+            const response = await fetch(`/api/solution/${configId}?target=${this.currentTarget}`);
+            const data = await response.json();
+            
+            if (data.error) {
+                this.showError(data.error);
+                return;
             }
             
-            const solution = await response.json();
-            this.currentSolution = solution;
+            this.currentSolution = data;
             this.currentStep = 0;
-            this.updateDisplay();
-            this.displayBoard(solution.solution_path[0]);
+            this.stopPlayback();
+            this.updateUI();
+            this.displayBoard(data.solution_path[0]);
             
-            this.hideLoading();
         } catch (error) {
+            this.showError('Failed to load solution');
+            console.error('Error:', error);
+        } finally {
             this.hideLoading();
-            this.showError(error.message);
         }
     }
 
     async loadRandomSolution() {
         this.showLoading();
         try {
-            const response = await fetch('/api/random');
-            const solution = await response.json();
-            this.currentSolution = solution;
-            this.currentStep = 0;
-            this.updateDisplay();
-            this.displayBoard(solution.solution_path[0]);
+            const response = await fetch(`/api/random?target=${this.currentTarget}`);
+            const data = await response.json();
             
-            this.hideLoading();
+            if (data.error) {
+                this.showError(data.error);
+                return;
+            }
+            
+            this.currentSolution = data;
+            this.currentStep = 0;
+            this.stopPlayback();
+            this.updateUI();
+            this.displayBoard(data.solution_path[0]);
+            
+            // Update the config ID input
+            this.configIdInput.value = data.id;
+            
         } catch (error) {
-            this.hideLoading();
             this.showError('Failed to load random solution');
+            console.error('Error:', error);
+        } finally {
+            this.hideLoading();
         }
     }
-
-
-
-
 
     async loadStatistics() {
         try {
-            const response = await fetch('/api/stats');
-            const stats = await response.json();
+            const response = await fetch(`/api/stats?target=${this.currentTarget}`);
+            const data = await response.json();
             
-            const statsHtml = `
+            if (data.error) {
+                this.statsContent.innerHTML = '<p>Error loading statistics</p>';
+                return;
+            }
+            
+            const html = `
                 <div class="stat-item">
-                    <span>Total Solutions:</span>
-                    <span class="stat-value">${stats.total_solutions.toLocaleString()}</span>
+                    <span class="stat-label">Target:</span>
+                    <span class="stat-value">${data.target}</span>
                 </div>
                 <div class="stat-item">
-                    <span>Move Range:</span>
-                    <span class="stat-value">${stats.move_stats.min} - ${stats.move_stats.max}</span>
+                    <span class="stat-label">Total Solutions:</span>
+                    <span class="stat-value">${data.total_solutions.toLocaleString()}</span>
                 </div>
                 <div class="stat-item">
-                    <span>Average Moves:</span>
-                    <span class="stat-value">${stats.move_stats.mean.toFixed(1)}</span>
+                    <span class="stat-label">Average Moves:</span>
+                    <span class="stat-value">${data.avg_moves}</span>
                 </div>
                 <div class="stat-item">
-                    <span>Median Moves:</span>
-                    <span class="stat-value">${stats.move_stats.median}</span>
+                    <span class="stat-label">Move Range:</span>
+                    <span class="stat-value">${data.min_moves} - ${data.max_moves}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Average Time:</span>
+                    <span class="stat-value">${data.avg_time_ms}ms</span>
                 </div>
             `;
             
-            this.statsContent.innerHTML = statsHtml;
+            this.statsContent.innerHTML = html;
+            
         } catch (error) {
-            this.statsContent.innerHTML = '<p>Failed to load statistics</p>';
+            this.statsContent.innerHTML = '<p>Error loading statistics</p>';
+            console.error('Error:', error);
         }
     }
 
-    searchById() {
-        const id = parseInt(this.configIdInput.value);
-        if (isNaN(id) || id < 0 || id > 415800) {
-            this.showError('Please enter a valid ID between 0 and 415800');
+    displayBoard(boardState) {
+        if (!boardState) return;
+        
+        const squares = document.querySelectorAll('.chess-square');
+        const target = this.availableTargets.find(t => t.name === this.currentTarget);
+        const targetPositions = target ? target.positions.split(',').map(p => parseInt(p.trim())) : [];
+        
+        for (let i = 0; i < 16; i++) {
+            const square = squares[i];
+            const piece = boardState[i];
+            
+            // Clear previous content and classes
+            square.innerHTML = '';
+            square.className = square.className.replace(/piece-\w+/g, '');
+            square.classList.remove('knight-on-target');
+            
+            if (piece !== 'x') {
+                // Create Lichess-style piece image
+                const img = document.createElement('img');
+                img.className = 'lichess-piece';
+                img.src = this.getLichessPieceUrl(piece);
+                img.alt = piece;
+                square.appendChild(img);
+                square.classList.add(`piece-${this.getPieceType(piece)}`);
+                
+                // Add special glow if knight is on target position
+                if ((piece === 'N' || piece === 'n') && targetPositions.includes(i)) {
+                    square.classList.add('knight-on-target');
+                }
+            }
+        }
+        
+        // Reapply target highlights
+        this.highlightTargetSquares();
+    }
+
+    getLichessPieceUrl(piece) {
+        // Using Lichess piece images for authentic look
+        const baseUrl = 'https://lichess1.org/assets/piece/cburnett/';
+        const pieceMap = {
+            'K': 'wK.svg', 'k': 'bK.svg',
+            'Q': 'wQ.svg', 'q': 'bQ.svg', 
+            'R': 'wR.svg', 'r': 'bR.svg',
+            'B': 'wB.svg', 'b': 'bB.svg',
+            'N': 'wN.svg', 'n': 'bN.svg',
+            'P': 'wP.svg', 'p': 'bP.svg'
+        };
+        return baseUrl + (pieceMap[piece] || '');
+    }
+
+    getPieceType(piece) {
+        const types = {
+            'K': 'king', 'k': 'king',
+            'Q': 'queen', 'q': 'queen',
+            'R': 'rook', 'r': 'rook', 
+            'B': 'bishop', 'b': 'bishop',
+            'N': 'knight', 'n': 'knight',
+            'P': 'pawn', 'p': 'pawn'
+        };
+        return types[piece] || 'empty';
+    }
+
+    // Playback control methods
+    togglePlayback() {
+        if (this.isPlaying) {
+            this.stopPlayback();
+        } else {
+            this.startPlayback();
+        }
+    }
+
+    startPlayback() {
+        if (!this.currentSolution || this.currentStep >= this.currentSolution.solution_path.length - 1) {
             return;
         }
-        this.loadSolution(id);
+        
+        this.isPlaying = true;
+        this.playPauseBtn.textContent = '⏸️';
+        
+        this.playbackTimer = setInterval(() => {
+            if (this.currentStep < this.currentSolution.solution_path.length - 1) {
+                this.nextStep();
+            } else {
+                this.stopPlayback();
+            }
+        }, this.playbackSpeed);
     }
 
-    updateDisplay() {
+    stopPlayback() {
+        this.isPlaying = false;
+        this.playPauseBtn.textContent = '▶️';
+        if (this.playbackTimer) {
+            clearInterval(this.playbackTimer);
+            this.playbackTimer = null;
+        }
+    }
+
+    nextStep() {
+        if (!this.currentSolution || this.currentStep >= this.currentSolution.solution_path.length - 1) {
+            return;
+        }
+        
+        this.currentStep++;
+        this.displayBoard(this.currentSolution.solution_path[this.currentStep]);
+        this.updateProgressBar();
+        this.updateStepInfo();
+    }
+
+    previousStep() {
+        if (!this.currentSolution || this.currentStep <= 0) {
+            return;
+        }
+        
+        this.currentStep--;
+        this.displayBoard(this.currentSolution.solution_path[this.currentStep]);
+        this.updateProgressBar();
+        this.updateStepInfo();
+    }
+
+    goToStep(step) {
+        if (!this.currentSolution || step < 0 || step >= this.currentSolution.solution_path.length) {
+            return;
+        }
+        
+        this.currentStep = step;
+        this.displayBoard(this.currentSolution.solution_path[this.currentStep]);
+        this.updateProgressBar();
+        this.updateStepInfo();
+    }
+
+    goToLastStep() {
         if (!this.currentSolution) return;
-        
-        this.currentId.textContent = this.currentSolution.id;
-        this.currentMoves.textContent = this.currentSolution.moves;
-        this.currentStepDisplay.textContent = `${this.currentStep + 1} / ${this.currentSolution.total_steps}`;
-        
-        // Update progress bar
-        const progress = ((this.currentStep + 1) / this.currentSolution.total_steps) * 100;
-        this.progressFill.style.width = `${progress}%`;
-        
-        // Update config ID input
-        this.configIdInput.value = this.currentSolution.id;
+        this.goToStep(this.currentSolution.solution_path.length - 1);
     }
 
     updateSpeed() {
@@ -298,102 +464,127 @@ class HippodromeExplorer {
         // If currently playing, restart with new speed
         if (this.isPlaying) {
             // Clear the old timer
-            if (this.playbackTimer) {
-                clearInterval(this.playbackTimer);
-                this.playbackTimer = null;
-            }
-            
+            clearInterval(this.playInterval);
             // Start new timer with updated speed
-            this.playbackTimer = setInterval(() => {
-                this.nextStep();
-                if (this.currentStep >= this.currentSolution.total_steps - 1) {
-                    this.stopPlayback();
-                }
-            }, this.playbackSpeed);
-        }
-        
-        console.log(`🚀 Slider: ${sliderValue} → Speed: ${this.playbackSpeed}ms (${(this.playbackSpeed / 1000).toFixed(2)}s) = ${speedMultiplier}x`);
-        console.log(`📊 Slider range: ${minValue} to ${maxValue} (reversed calculation)`);
-    }
-
-    togglePlayback() {
-        if (this.isPlaying) {
-            this.stopPlayback();
-        } else {
             this.startPlayback();
         }
     }
 
-    startPlayback() {
-        if (!this.currentSolution || this.currentStep >= this.currentSolution.total_steps - 1) {
+    updateUI() {
+        if (!this.currentSolution) return;
+        
+        this.currentId.textContent = `#${this.currentSolution.id}`;
+        this.currentMoves.textContent = `${this.currentSolution.moves}`;
+        
+        this.updateProgressBar();
+        this.updateStepInfo();
+    }
+
+    updateProgressBar() {
+        if (!this.currentSolution) return;
+        
+        const progress = (this.currentStep / (this.currentSolution.solution_path.length - 1)) * 100;
+        this.progressFill.style.width = `${progress}%`;
+    }
+
+    updateStepInfo() {
+        if (!this.currentSolution) return;
+        
+        this.currentStepDisplay.textContent = `${this.currentStep} / ${this.currentSolution.solution_path.length - 1}`;
+    }
+
+    // Editor functionality (keeping from original)
+    toggleEditMode() {
+        this.editMode = !this.editMode;
+        
+        if (this.editMode) {
+            this.enterEditMode();
+        } else {
+            this.exitEditMode();
+        }
+    }
+
+    enterEditMode() {
+        this.editMode = true;
+        this.piecePalette.classList.remove('hidden');
+        this.editModeBtn.textContent = '👁️ View Mode';
+        this.boardModeText.textContent = '✏️ Edit Mode - Click squares to place pieces';
+        this.stopPlayback();
+        
+        // Initialize with current board or empty board
+        if (this.currentSolution) {
+            this.editorBoardState = this.currentSolution.solution_path[this.currentStep];
+        } else {
+            this.editorBoardState = 'xxxxxxxxxxxxxxxx';
+        }
+        
+        this.displayBoard(this.editorBoardState);
+    }
+
+    exitEditMode() {
+        this.editMode = false;
+        this.piecePalette.classList.add('hidden');
+        this.editModeBtn.textContent = '📝 Edit Board';
+        this.boardModeText.textContent = '📋 Solution View';
+        
+        // Restore solution display
+        if (this.currentSolution) {
+            this.displayBoard(this.currentSolution.solution_path[this.currentStep]);
+        }
+    }
+
+    handleSquareClick(position) {
+        if (!this.editMode) return;
+        
+        // Update board state
+        const boardArray = this.editorBoardState.split('');
+        boardArray[position] = this.selectedPiece;
+        this.editorBoardState = boardArray.join('');
+        
+        // Update display
+        this.displayBoard(this.editorBoardState);
+    }
+
+    clearBoard() {
+        this.editorBoardState = 'xxxxxxxxxxxxxxxx';
+        this.displayBoard(this.editorBoardState);
+    }
+
+    async searchByBoard() {
+        if (this.editorBoardState.length !== 16) {
+            this.showError('Invalid board state');
             return;
         }
         
-        this.isPlaying = true;
-        this.playPauseBtn.textContent = '⏸️';
-        
-        console.log(`Starting playback at speed: ${this.playbackSpeed}ms`);
-        
-        this.playbackTimer = setInterval(() => {
-            this.nextStep();
-            if (this.currentStep >= this.currentSolution.total_steps - 1) {
-                this.stopPlayback();
+        this.showLoading();
+        try {
+            const response = await fetch(`/api/search_by_board?board=${this.editorBoardState}&target=${this.currentTarget}`);
+            const data = await response.json();
+            
+            if (data.error) {
+                this.showError(data.error);
+                return;
             }
-        }, this.playbackSpeed);
-    }
-
-    stopPlayback() {
-        this.isPlaying = false;
-        this.playPauseBtn.textContent = '▶️';
-        
-        if (this.playbackTimer) {
-            clearInterval(this.playbackTimer);
-            this.playbackTimer = null;
+            
+            // Exit edit mode and show solution
+            this.exitEditMode();
+            this.currentSolution = data;
+            this.currentStep = 0;
+            this.updateUI();
+            this.displayBoard(data.solution_path[0]);
+            
+            // Update config ID
+            this.configIdInput.value = data.id;
+            
+        } catch (error) {
+            this.showError('Search failed');
+            console.error('Error:', error);
+        } finally {
+            this.hideLoading();
         }
     }
 
-    nextStep() {
-        if (!this.currentSolution || this.currentStep >= this.currentSolution.total_steps - 1) {
-            return;
-        }
-        
-        const prevBoard = this.currentSolution.solution_path[this.currentStep];
-        this.currentStep++;
-        const currentBoard = this.currentSolution.solution_path[this.currentStep];
-        
-        this.displayBoard(currentBoard);
-        this.highlightMovedPiece(prevBoard, currentBoard);
-        this.updateDisplay();
-    }
-
-    previousStep() {
-        if (!this.currentSolution || this.currentStep <= 0) {
-            return;
-        }
-        
-        this.currentStep--;
-        this.displayBoard(this.currentSolution.solution_path[this.currentStep]);
-        this.updateDisplay();
-    }
-
-    goToFirstStep() {
-        if (!this.currentSolution) return;
-        
-        this.stopPlayback();
-        this.currentStep = 0;
-        this.displayBoard(this.currentSolution.solution_path[0]);
-        this.updateDisplay();
-    }
-
-    goToLastStep() {
-        if (!this.currentSolution) return;
-        
-        this.stopPlayback();
-        this.currentStep = this.currentSolution.total_steps - 1;
-        this.displayBoard(this.currentSolution.solution_path[this.currentStep]);
-        this.updateDisplay();
-    }
-
+    // Utility methods
     showLoading() {
         this.loadingOverlay.classList.remove('hidden');
     }
@@ -406,7 +597,6 @@ class HippodromeExplorer {
         this.errorText.textContent = message;
         this.errorMessage.classList.remove('hidden');
         
-        // Auto-hide after 5 seconds
         setTimeout(() => {
             this.hideError();
         }, 5000);
@@ -415,194 +605,9 @@ class HippodromeExplorer {
     hideError() {
         this.errorMessage.classList.add('hidden');
     }
-    
-    // ===== BOARD EDITOR FUNCTIONS =====
-    
-    toggleEditMode() {
-        if (this.editMode) {
-            this.exitEditMode();
-        } else {
-            this.enterEditMode();
-        }
-    }
-    
-    enterEditMode() {
-        this.editMode = true;
-        console.log('🎯 Entering edit mode');
-        
-        // Show/hide UI elements
-        this.piecePalette.classList.remove('hidden');
-        this.playbackSection.classList.add('hidden');
-        
-        // Update button text
-        this.editModeBtn.textContent = '👁️ View Mode';
-        
-        // Update board appearance
-        this.board.classList.add('board-edit-mode');
-        this.makeSquaresClickable();
-        
-        // Update header text
-        if (this.boardTitle) this.boardTitle.textContent = 'Board Editor';
-        if (this.boardModeIndicator) this.boardModeIndicator.textContent = 'Click squares to place pieces • Select piece type below';
-        
-        // Display current editor board
-        this.displayBoard(this.editorBoardState);
-        
-        // Stop any playing solution
-        this.stopPlayback();
-    }
-    
-    exitEditMode() {
-        this.editMode = false;
-        console.log('👁️ Exiting edit mode');
-        
-        // Show/hide UI elements
-        this.piecePalette.classList.add('hidden');
-        this.playbackSection.classList.remove('hidden');
-        
-        // Update button text
-        this.editModeBtn.textContent = '📝 Edit Board';
-        
-        // Update board appearance
-        this.board.classList.remove('board-edit-mode');
-        this.makeSquaresNonClickable();
-        
-        // Update header text
-        if (this.boardTitle) this.boardTitle.textContent = 'Hippodrome Puzzle Board';
-        if (this.boardModeIndicator) this.boardModeIndicator.textContent = 'Goal: Get all Knights (♞) to the top row';
-        
-        // Return to current solution if available
-        if (this.currentSolution) {
-            this.displayBoard(this.currentSolution.solution_path[this.currentStep]);
-        }
-    }
-    
-    selectPiece(piece) {
-        this.selectedPiece = piece;
-        console.log(`🎯 Selected piece: ${piece}`);
-        
-        // Update button active state
-        this.pieceBtns.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.piece === piece);
-        });
-    }
-    
-    handleSquareClick(index) {
-        if (!this.editMode) return;
-        
-        console.log(`🎯 Placing ${this.selectedPiece} at square ${index}`);
-        
-        // Update the editor board state
-        const boardArray = this.editorBoardState.split('');
-        boardArray[index] = this.selectedPiece;
-        this.editorBoardState = boardArray.join('');
-        
-        // Update display
-        this.displayBoard(this.editorBoardState);
-    }
-    
-    makeSquaresClickable() {
-        for (let i = 0; i < 16; i++) {
-            const square = document.getElementById(`square-${i}`);
-            square.classList.add('clickable');
-        }
-    }
-    
-    makeSquaresNonClickable() {
-        for (let i = 0; i < 16; i++) {
-            const square = document.getElementById(`square-${i}`);
-            square.classList.remove('clickable');
-        }
-    }
-    
-    clearBoard() {
-        console.log('🧹 Clearing board');
-        this.editorBoardState = 'xxxxxxxxxxxxxxxx';
-        this.displayBoard(this.editorBoardState);
-    }
-    
-    async searchByBoard() {
-        const boardState = this.editorBoardState;
-        console.log(`🔍 Searching for board: ${boardState}`);
-        
-        // Validate board is not empty
-        if (boardState === 'xxxxxxxxxxxxxxxx') {
-            this.showError('Please place some pieces on the board before searching');
-            return;
-        }
-        
-        this.showLoading();
-        try {
-            const response = await fetch('/api/search_by_board', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ board_state: boardState })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const data = await response.json();
-            console.log('🔍 Search response:', data);
-            
-            if (data.results && data.results.length > 0) {
-                // Found matching solution(s) - load the first one
-                console.log(`✅ Found ${data.results.length} matching solution(s)`);
-                await this.loadSolution(data.results[0].id);
-                this.exitEditMode(); // Switch back to view mode to show solution
-            } else if (data.unsolvable) {
-                // Board exists but has no solution
-                this.hideLoading();
-                this.showError(`❌ This board configuration has no solution! The puzzle cannot be solved from this starting position. Try a different arrangement.`);
-            } else {
-                // Board doesn't exist in database
-                this.hideLoading();
-                this.showError(`🔍 No solutions found for this board configuration. Try a different arrangement or check if all pieces are correctly placed.`);
-            }
-        } catch (error) {
-            console.error('❌ Search by board failed:', error);
-            this.hideLoading();
-            this.showError('Failed to search board configuration. Please try again.');
-        }
-    }
 }
 
-// Initialize the application when the page loads
+// Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     new HippodromeExplorer();
-});
-
-// Add keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT') return; // Don't trigger when typing in inputs
-    
-    switch(e.key) {
-        case ' ':
-            e.preventDefault();
-            document.getElementById('play-pause-btn').click();
-            break;
-        case 'ArrowLeft':
-            e.preventDefault();
-            document.getElementById('prev-btn').click();
-            break;
-        case 'ArrowRight':
-            e.preventDefault();
-            document.getElementById('next-btn').click();
-            break;
-        case 'Home':
-            e.preventDefault();
-            document.getElementById('first-btn').click();
-            break;
-        case 'End':
-            e.preventDefault();
-            document.getElementById('last-btn').click();
-            break;
-        case 'r':
-            e.preventDefault();
-            document.getElementById('random-btn').click();
-            break;
-    }
 }); 
