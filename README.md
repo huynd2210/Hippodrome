@@ -119,3 +119,4 @@ These require pre-computed solution CSV files in the `solutions_csv/` directory.
 - Board states are represented as 16-character strings in row-major order
 - The web interface automatically replaces spaces with 'x' in board representations
 - Solution paths are stored as semicolon-separated board states
+- Since there are only 1 available space, and no captures are allowed, this means that the queen functions identically as kings. Thus we treat queens as kings in order to reduce the total amount of board configurations down to just 415k.
