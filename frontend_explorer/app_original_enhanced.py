@@ -19,7 +19,7 @@ def get_target_db_connection(target_name):
         'first-column': 'hippodrome_first_column.db',
         'last-column': 'hippodrome_last_column.db',
         'corners': 'hippodrome_corners.db',
-        'center': 'hippodrome_solutions.db'  # Fallback to original for now
+        'center': 'hippodrome_center.db'  # Use the dedicated center database
     }
     
     db_file = target_db_map.get(target_name, f"hippodrome_{target_name.replace('-', '_')}.db")
