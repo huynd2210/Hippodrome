@@ -57,3 +57,6 @@ unique_board_states.txt
 
 # Sample solutions (keep small sample files, exclude large ones)
 solutions_batch_*.csv
+
+# Documentation files
+LLM.md
