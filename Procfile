@@ -1,1 +1,1 @@
-web: cd frontend_explorer && gunicorn app:app
+web: cd frontend_explorer && gunicorn app_cloud:app

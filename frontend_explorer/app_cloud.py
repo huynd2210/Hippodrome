@@ -6,43 +6,75 @@ import random
 import json
 import urllib.request
 import tempfile
-from functools import lru_cache
+import hashlib
+from pathlib import Path
 
 app = Flask(__name__)
 CORS(app)
 
-# Database paths - using separate databases per target
-TARGETS_INDEX_DB = "targets_index.db"
+# Cache directory for downloaded databases
+CACHE_DIR = Path(tempfile.gettempdir()) / 'hippodrome_cache'
+CACHE_DIR.mkdir(exist_ok=True)
 
-# Cache for downloaded databases
-DB_CACHE = {}
+# Database URLs from environment variables or defaults
+DB_URLS = {
+    'targets_index': os.environ.get('DB_URL_TARGETS_INDEX', ''),
+    'top-row': os.environ.get('DB_URL_TOP_ROW', ''),
+    'first-column': os.environ.get('DB_URL_FIRST_COLUMN', ''),
+    'last-column': os.environ.get('DB_URL_LAST_COLUMN', ''),
+    'corners': os.environ.get('DB_URL_CORNERS', ''),
+    'center': os.environ.get('DB_URL_CENTER', '')
+}
 
-def get_target_db_connection(target_name):
-    """Get a database connection for a specific target"""
-    # Map targets to their actual database files
-    target_db_map = {
-        'top-row': 'hippodrome_top_row.db',  # Original database has top-row solutions
+def get_db_path(db_name):
+    """Get database path, downloading from URL if needed"""
+    # First check if local file exists
+    local_names = {
+        'targets_index': 'targets_index.db',
+        'top-row': 'hippodrome_top_row.db',
         'first-column': 'hippodrome_first_column.db',
         'last-column': 'hippodrome_last_column.db',
         'corners': 'hippodrome_corners.db',
-        'center': 'hippodrome_center.db'  # Use the dedicated center database
+        'center': 'hippodrome_center.db'
     }
     
-    db_file = target_db_map.get(target_name, f"hippodrome_{target_name.replace('-', '_')}.db")
+    local_file = local_names.get(db_name, f'hippodrome_{db_name}.db')
+    if os.path.exists(local_file):
+        return local_file
     
-    if not os.path.exists(db_file):
-        raise FileNotFoundError(f"Target database not found: {db_file}")
+    # Check if we have a URL for this database
+    db_url = DB_URLS.get(db_name, '')
+    if not db_url:
+        raise FileNotFoundError(f"No database found for {db_name}")
     
-    conn = sqlite3.connect(db_file)
+    # Check cache
+    url_hash = hashlib.md5(db_url.encode()).hexdigest()
+    cache_path = CACHE_DIR / f"{db_name}_{url_hash}.db"
+    
+    if cache_path.exists():
+        print(f"Using cached {db_name} database")
+        return str(cache_path)
+    
+    # Download database
+    print(f"Downloading {db_name} database from {db_url[:50]}...")
+    try:
+        urllib.request.urlretrieve(db_url, cache_path)
+        print(f"Successfully downloaded {db_name} database")
+        return str(cache_path)
+    except Exception as e:
+        raise Exception(f"Failed to download {db_name} database: {str(e)}")
+
+def get_target_db_connection(target_name):
+    """Get a database connection for a specific target"""
+    db_path = get_db_path(target_name)
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
 def get_targets_index():
     """Get the targets index database connection"""
-    if not os.path.exists(TARGETS_INDEX_DB):
-        raise FileNotFoundError(f"Targets index not found: {TARGETS_INDEX_DB}")
-    
-    conn = sqlite3.connect(TARGETS_INDEX_DB)
+    db_path = get_db_path('targets_index')
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -61,12 +93,26 @@ def index():
 def get_targets():
     """Get all available targets"""
     try:
-        conn = get_targets_index()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM targets ORDER BY name')
-        targets = [dict(row) for row in cursor.fetchall()]
-        conn.close()
-        return jsonify(targets)
+        # Return predefined targets if we can't access the index
+        default_targets = [
+            {'name': 'top-row', 'positions': '0,1,2,3'},
+            {'name': 'first-column', 'positions': '0,4,8,12'},
+            {'name': 'last-column', 'positions': '3,7,11,15'},
+            {'name': 'corners', 'positions': '0,3,12,15'},
+            {'name': 'center', 'positions': '5,6,9,10'}
+        ]
+        
+        try:
+            conn = get_targets_index()
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM targets ORDER BY name')
+            targets = [dict(row) for row in cursor.fetchall()]
+            conn.close()
+            return jsonify(targets)
+        except:
+            # Return default targets if index is not available
+            return jsonify(default_targets)
+            
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -255,14 +301,8 @@ def health_check():
     return jsonify({'status': 'ready'})
 
 if __name__ == '__main__':
-    # Start with minimal initialization - just check that targets index exists
-    if not os.path.exists(TARGETS_INDEX_DB):
-        print(f"❌ Error: {TARGETS_INDEX_DB} not found!")
-        print("Please run: python create_target_databases.py")
-        exit(1)
-    
-    print("🎯 Hippodrome Explorer (Original Enhanced) starting...")
-    print("✅ Target databases ready for on-demand loading")
+    print("🎯 Hippodrome Explorer (Cloud Edition) starting...")
+    print("📡 Will download databases from URLs if not found locally")
     
     # Use PORT from environment if available (for cloud deployment)
     port = int(os.environ.get('PORT', 5000))

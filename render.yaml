@@ -3,7 +3,20 @@ services:
     name: hippodrome-solver
     runtime: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "cd frontend_explorer && gunicorn app:app --bind 0.0.0.0:$PORT"
+    startCommand: "cd frontend_explorer && gunicorn app_cloud:app --bind 0.0.0.0:$PORT"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      # Database URLs - to be filled after uploading to cloud storage
+      - key: DB_URL_TARGETS_INDEX
+        value: ""
+      - key: DB_URL_TOP_ROW
+        value: ""
+      - key: DB_URL_FIRST_COLUMN
+        value: ""
+      - key: DB_URL_LAST_COLUMN
+        value: ""
+      - key: DB_URL_CORNERS
+        value: ""
+      - key: DB_URL_CENTER
+        value: ""
