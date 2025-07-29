@@ -257,4 +257,7 @@ if __name__ == '__main__':
     
     print("🎯 Hippodrome Explorer (Original Enhanced) starting...")
     print("✅ Target databases ready for on-demand loading")
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    
+    # Use PORT from environment if available (for cloud deployment)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
