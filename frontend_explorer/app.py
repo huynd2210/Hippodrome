@@ -1,269 +1,413 @@
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
-import sqlite3
 import os
+import sqlite3
 import random
-import json
+import struct
 import urllib.request
 import tempfile
-from functools import lru_cache
+import hashlib
+from pathlib import Path
+from typing import Dict, List, Tuple, Optional
 
 app = Flask(__name__)
 CORS(app)
 
-# Database paths - using separate databases per target
-TARGETS_INDEX_DB = "targets_index.db"
+# Backend source: 'bin' (default) reads compact binary files; 'db' uses SQLite
+HIPPO_SOURCE = os.environ.get('HIPPO_SOURCE', 'bin').lower()
 
-# Cache for downloaded databases
-DB_CACHE = {}
+# Directories
+ROOT_DIR = Path(__file__).resolve().parent.parent
+BIN_DIR = (ROOT_DIR / 'encoded_solutions').resolve()
 
-def get_target_db_connection(target_name):
-    """Get a database connection for a specific target"""
-    # Map targets to their actual database files
-    target_db_map = {
-        'top-row': 'hippodrome_top_row.db',  # Original database has top-row solutions
-        'first-column': 'hippodrome_first_column.db',
-        'last-column': 'hippodrome_last_column.db',
-        'corners': 'hippodrome_corners.db',
-        'center': 'hippodrome_center.db'  # Use the dedicated center database
-    }
-    
-    db_file = target_db_map.get(target_name, f"hippodrome_{target_name.replace('-', '_')}.db")
-    
-    if not os.path.exists(db_file):
+# Binary metadata
+MAGIC = b'HIPP'
+TARGETS = ['top-row', 'first-column', 'last-column', 'corners', 'center']
+TARGET_POSITIONS = {
+    'top-row': [0, 1, 2, 3],
+    'bottom-row': [12, 13, 14, 15],
+    'first-column': [0, 4, 8, 12],
+    'last-column': [3, 7, 11, 15],
+    'corners': [0, 3, 12, 15],
+    'center': [5, 6, 9, 10],
+}
+TARGET_BIN_MAP = {
+    'top-row': 'hippodrome_solutions_og.bin',
+    'first-column': 'hippodrome_solutions_first_column.bin',
+    'last-column': 'hippodrome_solutions_last_column.bin',
+    'corners': 'hippodrome_solutions_corners.bin',
+    'center': 'hippodrome_solutions_center.bin',
+}
+TARGET_DB_MAP = {
+    'top-row': 'hippodrome_top_row.db',
+    'first-column': 'hippodrome_first_column.db',
+    'last-column': 'hippodrome_last_column.db',
+    'corners': 'hippodrome_corners.db',
+    'center': 'hippodrome_center.db',
+}
+
+# Optional remote URLs for cloud deployments
+BIN_URLS = {
+    'top-row': os.environ.get('BIN_URL_TOP_ROW', ''),
+    'first-column': os.environ.get('BIN_URL_FIRST_COLUMN', ''),
+    'last-column': os.environ.get('BIN_URL_LAST_COLUMN', ''),
+    'corners': os.environ.get('BIN_URL_CORNERS', ''),
+    'center': os.environ.get('BIN_URL_CENTER', ''),
+}
+DB_URLS = {
+    'targets_index': os.environ.get('DB_URL_TARGETS_INDEX', ''),
+    'top-row': os.environ.get('DB_URL_TOP_ROW', ''),
+    'first-column': os.environ.get('DB_URL_FIRST_COLUMN', ''),
+    'last-column': os.environ.get('DB_URL_LAST_COLUMN', ''),
+    'corners': os.environ.get('DB_URL_CORNERS', ''),
+    'center': os.environ.get('DB_URL_CENTER', ''),
+}
+
+CACHE_DIR = Path(tempfile.gettempdir()) / 'hippodrome_cache'
+CACHE_DIR.mkdir(exist_ok=True)
+
+
+def download_to_cache(url: str, key_hint: str) -> Optional[str]:
+    if not url:
+        return None
+    h = hashlib.md5(url.encode()).hexdigest()
+    path = CACHE_DIR / f"{key_hint}_{h}"
+    if path.exists():
+        return str(path)
+    try:
+        urllib.request.urlretrieve(url, path)
+        return str(path)
+    except Exception:
+        return None
+
+
+# --------------- BIN BACKEND ---------------
+
+def board_from_bitboards(bitboards: List[int]) -> str:
+    k1, k2, k3, k4, rooks, bishops, kings, empty = bitboards
+    chars = []
+    for i in range(16):
+        mask = 1 << i
+        if (k1 | k2 | k3 | k4) & mask:
+            chars.append('N')
+        elif rooks & mask:
+            chars.append('R')
+        elif bishops & mask:
+            chars.append('B')
+        elif kings & mask:
+            chars.append('K')
+        elif empty & mask:
+            chars.append('x')
+        else:
+            chars.append('x')
+    return ''.join(chars)
+
+def unpack_moves_from_bytes(data: bytes) -> List[Tuple[int, int]]:
+    return [(((b >> 4) & 0x0F), (b & 0x0F)) for b in data]
+
+def apply_move(board: str, move: Tuple[int, int]) -> str:
+    from_pos, to_pos = move
+    bl = list(board)
+    bl[to_pos] = bl[from_pos]
+    bl[from_pos] = 'x'
+    return ''.join(bl)
+
+def reconstruct_states(initial_board: str, moves_bytes: bytes) -> List[str]:
+    states = [initial_board]
+    current = initial_board
+    for mv in unpack_moves_from_bytes(moves_bytes):
+        current = apply_move(current, mv)
+        states.append(current)
+    return states
+
+class BinTargetIndex:
+    def __init__(self, target_name: str):
+        self.target = target_name
+        self.path = self._resolve_path()
+        self.file = None  # type: Optional[object]
+        self.version = 0
+        self.count = 0
+        self.entries: List[Dict] = []
+        self.id_to_idx: Dict[int, int] = {}
+        self.min_moves = None
+        self.max_moves = None
+        self.sum_moves = 0
+
+    def _resolve_path(self) -> str:
+        filename = TARGET_BIN_MAP[self.target]
+        local_path = BIN_DIR / filename
+        if local_path.exists():
+            return str(local_path)
+        # Try remote URL
+        url = BIN_URLS.get(self.target, '')
+        cached = download_to_cache(url, f"{self.target}.bin") if url else None
+        if cached:
+            return cached
+        raise FileNotFoundError(f"Binary not found for target {self.target}")
+
+    def open(self):
+        if self.file is None:
+            self.file = open(self.path, 'rb')
+            self._build_index()
+
+    def _build_index(self):
+        f = self.file
+        f.seek(0)
+        magic = f.read(4)
+        if magic != MAGIC:
+            raise ValueError(f'Invalid magic in {self.path}')
+        self.version = struct.unpack('<B', f.read(1))[0]
+        self.count = struct.unpack('<I', f.read(4))[0]
+        for i in range(self.count):
+            offset = f.tell()
+            sid = struct.unpack('<I', f.read(4))[0]
+            bitboards = [struct.unpack('<H', f.read(2))[0] for _ in range(8)]
+            initial = board_from_bitboards(bitboards)
+            mcount = struct.unpack('<H', f.read(2))[0]
+            f.seek(mcount, os.SEEK_CUR)
+            self.min_moves = mcount if self.min_moves is None else min(self.min_moves, mcount)
+            self.max_moves = mcount if self.max_moves is None else max(self.max_moves, mcount)
+            self.sum_moves += mcount
+            self.id_to_idx[sid] = i
+            self.entries.append({'id': sid, 'offset': offset, 'initial_board': initial, 'moves_count': mcount})
+
+    def _read_entry(self, idx: int):
+        f = self.file
+        meta = self.entries[idx]
+        f.seek(meta['offset'])
+        sid = struct.unpack('<I', f.read(4))[0]
+        bitboards = [struct.unpack('<H', f.read(2))[0] for _ in range(8)]
+        mcount = struct.unpack('<H', f.read(2))[0]
+        moves = f.read(mcount)
+        return sid, bitboards, moves
+
+    def get_by_id(self, sid: int):
+        self.open()
+        idx = self.id_to_idx.get(sid)
+        return None if idx is None else self._read_entry(idx)
+
+    def get_random(self):
+        self.open()
+        return self._read_entry(random.randrange(self.count))
+
+    def get_stats(self):
+        self.open()
+        avg_moves = (self.sum_moves / self.count) if self.count else 0.0
+        return {'total_solutions': self.count, 'avg_moves': round(avg_moves, 2), 'min_moves': self.min_moves or 0, 'max_moves': self.max_moves or 0}
+
+    def find_by_board(self, board_state: str):
+        self.open()
+        for i, meta in enumerate(self.entries):
+            if meta['initial_board'] == board_state:
+                return self._read_entry(i)
+        return None
+
+_BIN_INDICES: Dict[str, BinTargetIndex] = {}
+
+def get_bin_index(target: str) -> BinTargetIndex:
+    if target not in _BIN_INDICES:
+        _BIN_INDICES[target] = BinTargetIndex(target)
+    return _BIN_INDICES[target]
+
+
+# --------------- DB BACKEND ---------------
+
+def get_target_db_connection(target_name: str):
+    db_file = TARGET_DB_MAP.get(target_name, f"hippodrome_{target_name.replace('-', '_')}.db")
+    if os.path.exists(db_file):
+        conn = sqlite3.connect(db_file)
+        conn.row_factory = sqlite3.Row
+        return conn
+    # remote
+    url = DB_URLS.get(target_name, '')
+    if not url:
         raise FileNotFoundError(f"Target database not found: {db_file}")
-    
-    conn = sqlite3.connect(db_file)
+    cache_path = download_to_cache(url, f"{target_name}.db")
+    if not cache_path:
+        raise FileNotFoundError(f"Failed to download database for {target_name}")
+    conn = sqlite3.connect(cache_path)
     conn.row_factory = sqlite3.Row
     return conn
 
-def get_targets_index():
-    """Get the targets index database connection"""
-    if not os.path.exists(TARGETS_INDEX_DB):
-        raise FileNotFoundError(f"Targets index not found: {TARGETS_INDEX_DB}")
-    
-    conn = sqlite3.connect(TARGETS_INDEX_DB)
-    conn.row_factory = sqlite3.Row
-    return conn
 
-def parse_solution_path(solution_path_str):
-    """Parse semicolon-separated solution path into list of board states"""
+def parse_solution_path(solution_path_str: str) -> List[str]:
     if not solution_path_str:
         return []
-    return solution_path_str.split(';')
+    return [s for s in solution_path_str.split(';')]
+
+
+# --------------- ROUTES ---------------
 
 @app.route('/')
 def index():
-    """Serve the main application page"""
     return render_template('index.html')
 
 @app.route('/api/targets')
 def get_targets():
-    """Get all available targets"""
-    try:
-        conn = get_targets_index()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM targets ORDER BY name')
-        targets = [dict(row) for row in cursor.fetchall()]
-        conn.close()
-        return jsonify(targets)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    targets = []
+    for t in TARGETS:
+        if HIPPO_SOURCE == 'bin':
+            fname = TARGET_BIN_MAP[t]
+            local = (BIN_DIR / fname).exists()
+            remote = bool(BIN_URLS.get(t, ''))
+            if not (local or remote):
+                continue
+        else:
+            local = os.path.exists(TARGET_DB_MAP[t])
+            remote = bool(DB_URLS.get(t, ''))
+            if not (local or remote):
+                continue
+        targets.append({'name': t, 'positions': ','.join(map(str, TARGET_POSITIONS.get(t, []))), 'description': t})
+    return jsonify(targets)
 
 @app.route('/api/solution/<int:config_id>')
 def get_solution(config_id):
-    """Get a specific solution by configuration ID"""
     target = request.args.get('target', 'top-row')
-    
     try:
-        conn = get_target_db_connection(target)
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            'SELECT id, initial_board, solution_path, moves, time_ms FROM solutions WHERE id = ?',
-            (config_id,)
-        )
-        
-        row = cursor.fetchone()
-        conn.close()
-        
-        if not row:
-            return jsonify({'error': f'Solution not found for config {config_id} with target {target}'}), 404
-        
-        # Parse the solution path
-        solution_steps = parse_solution_path(row['solution_path'])
-        
-        return jsonify({
-            'id': row['id'],
-            'initial_board': row['initial_board'],
-            'solution_path': solution_steps,
-            'moves': row['moves'],
-            'time_ms': row['time_ms'],
-            'target': target
-        })
-        
+        if HIPPO_SOURCE == 'bin':
+            idx = get_bin_index(target)
+            data = idx.get_by_id(config_id)
+            if not data:
+                return jsonify({'error': f'Solution not found for config {config_id} with target {target}'}), 404
+            sid, bitboards, moves_bytes = data
+            initial_board = board_from_bitboards(bitboards)
+            states = reconstruct_states(initial_board, moves_bytes)
+            return jsonify({'id': sid, 'initial_board': initial_board, 'solution_path': states, 'moves': len(states) - 1, 'time_ms': 0.0, 'target': target})
+        else:
+            conn = get_target_db_connection(target)
+            cur = conn.cursor()
+            cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions WHERE id = ?', (config_id,))
+            row = cur.fetchone()
+            conn.close()
+            if not row:
+                return jsonify({'error': f'Solution not found for config {config_id} with target {target}'}), 404
+            return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/random')
 def get_random_solution():
-    """Get a random solution"""
-    target = request.args.get('target', 'top-row') 
-    
+    target = request.args.get('target', 'top-row')
     try:
-        conn = get_target_db_connection(target)
-        cursor = conn.cursor()
-        
-        # Get random solution
-        cursor.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions ORDER BY RANDOM() LIMIT 1')
-        row = cursor.fetchone()
-        conn.close()
-        
-        if not row:
-            return jsonify({'error': f'No solutions found for target {target}'}), 404
-        
-        # Parse the solution path
-        solution_steps = parse_solution_path(row['solution_path'])
-        
-        return jsonify({
-            'id': row['id'],
-            'initial_board': row['initial_board'],
-            'solution_path': solution_steps,
-            'moves': row['moves'],
-            'time_ms': row['time_ms'],
-            'target': target
-        })
-        
+        if HIPPO_SOURCE == 'bin':
+            idx = get_bin_index(target)
+            sid, bitboards, moves_bytes = idx.get_random()
+            initial_board = board_from_bitboards(bitboards)
+            states = reconstruct_states(initial_board, moves_bytes)
+            return jsonify({'id': sid, 'initial_board': initial_board, 'solution_path': states, 'moves': len(states) - 1, 'time_ms': 0.0, 'target': target})
+        else:
+            conn = get_target_db_connection(target)
+            cur = conn.cursor()
+            cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions ORDER BY RANDOM() LIMIT 1')
+            row = cur.fetchone()
+            conn.close()
+            if not row:
+                return jsonify({'error': f'No solutions found for target {target}'}), 404
+            return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/search')
 def search_solutions():
-    """Search solutions by criteria"""
     target = request.args.get('target', 'top-row')
     min_moves = request.args.get('min_moves', type=int)
     max_moves = request.args.get('max_moves', type=int)
-    limit = min(request.args.get('limit', 10, type=int), 100)  # Cap at 100
-    
+    limit = min(request.args.get('limit', 10, type=int), 100)
     try:
-        conn = get_target_db_connection(target)
-        cursor = conn.cursor()
-        
-        query = 'SELECT id, initial_board, moves, time_ms FROM solutions WHERE 1=1'
-        params = []
-        
-        if min_moves is not None:
-            query += ' AND moves >= ?'
-            params.append(min_moves)
-        
-        if max_moves is not None:
-            query += ' AND moves <= ?'
-            params.append(max_moves)
-        
-        query += ' ORDER BY moves ASC LIMIT ?'
-        params.append(limit)
-        
-        cursor.execute(query, params)
-        results = [dict(row) for row in cursor.fetchall()]
-        conn.close()
-        
-        return jsonify(results)
-        
+        if HIPPO_SOURCE == 'bin':
+            idx = get_bin_index(target)
+            results = []
+            for meta in idx.entries:
+                m = meta['moves_count']
+                if min_moves is not None and m < min_moves:
+                    continue
+                if max_moves is not None and m > max_moves:
+                    continue
+                results.append({'id': meta['id'], 'initial_board': meta['initial_board'], 'moves': m, 'time_ms': 0.0})
+                if len(results) >= limit:
+                    break
+            return jsonify(results)
+        else:
+            conn = get_target_db_connection(target)
+            cur = conn.cursor()
+            query = 'SELECT id, initial_board, moves, time_ms FROM solutions WHERE 1=1'
+            params = []
+            if min_moves is not None:
+                query += ' AND moves >= ?'
+                params.append(min_moves)
+            if max_moves is not None:
+                query += ' AND moves <= ?'
+                params.append(max_moves)
+            query += ' ORDER BY moves ASC LIMIT ?'
+            params.append(limit)
+            cur.execute(query, params)
+            results = [dict(row) for row in cur.fetchall()]
+            conn.close()
+            return jsonify(results)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/stats')
 def get_statistics():
-    """Get database statistics"""
     target = request.args.get('target', 'top-row')
-    
     try:
-        conn = get_target_db_connection(target)
-        cursor = conn.cursor()
-        
-        # Basic stats
-        cursor.execute('SELECT COUNT(*) as total FROM solutions')
-        total = cursor.fetchone()['total']
-        
-        cursor.execute('SELECT AVG(moves) as avg_moves, MIN(moves) as min_moves, MAX(moves) as max_moves FROM solutions')
-        moves_stats = cursor.fetchone()
-        
-        cursor.execute('SELECT AVG(time_ms) as avg_time FROM solutions')
-        time_stats = cursor.fetchone()
-        
-        # Move distribution
-        cursor.execute('SELECT moves, COUNT(*) as count FROM solutions GROUP BY moves ORDER BY moves')
-        move_distribution = [{'moves': row['moves'], 'count': row['count']} for row in cursor.fetchall()]
-        
-        conn.close()
-        
-        return jsonify({
-            'target': target,
-            'total_solutions': total,
-            'avg_moves': round(moves_stats['avg_moves'], 2),
-            'min_moves': moves_stats['min_moves'],
-            'max_moves': moves_stats['max_moves'],
-            'avg_time_ms': round(time_stats['avg_time'], 2),
-            'move_distribution': move_distribution
-        })
-        
+        if HIPPO_SOURCE == 'bin':
+            idx = get_bin_index(target)
+            s = idx.get_stats()
+            return jsonify({'target': target, 'total_solutions': s['total_solutions'], 'avg_moves': s['avg_moves'], 'min_moves': s['min_moves'], 'max_moves': s['max_moves'], 'avg_time_ms': 0.0, 'move_distribution': []})
+        else:
+            conn = get_target_db_connection(target)
+            cur = conn.cursor()
+            cur.execute('SELECT COUNT(*) as total FROM solutions')
+            total = cur.fetchone()[0]
+            cur.execute('SELECT AVG(moves), MIN(moves), MAX(moves) FROM solutions')
+            avg_moves, min_moves, max_moves = cur.fetchone()
+            cur.execute('SELECT AVG(time_ms) FROM solutions')
+            avg_time = cur.fetchone()[0]
+            conn.close()
+            return jsonify({'target': target, 'total_solutions': total, 'avg_moves': round(avg_moves, 2), 'min_moves': min_moves, 'max_moves': max_moves, 'avg_time_ms': round(avg_time, 2), 'move_distribution': []})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/search_by_board')
 def search_by_board():
-    """Search for solutions by initial board state"""
     board_state = request.args.get('board', '')
     target = request.args.get('target', 'top-row')
-    
     if len(board_state) != 16:
         return jsonify({'error': 'Board state must be exactly 16 characters'}), 400
-    
     try:
-        conn = get_target_db_connection(target)
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            'SELECT id, initial_board, solution_path, moves, time_ms FROM solutions WHERE initial_board = ?',
-            (board_state,)
-        )
-        
-        row = cursor.fetchone()
-        conn.close()
-        
-        if not row:
-            return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
-        
-        # Parse the solution path
-        solution_steps = parse_solution_path(row['solution_path'])
-        
-        return jsonify({
-            'id': row['id'],
-            'initial_board': row['initial_board'],
-            'solution_path': solution_steps,
-            'moves': row['moves'],
-            'time_ms': row['time_ms'],
-            'target': target
-        })
-        
+        if HIPPO_SOURCE == 'bin':
+            idx = get_bin_index(target)
+            data = idx.find_by_board(board_state)
+            if not data:
+                return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
+            sid, bitboards, moves_bytes = data
+            initial_board = board_from_bitboards(bitboards)
+            states = reconstruct_states(initial_board, moves_bytes)
+            return jsonify({'id': sid, 'initial_board': initial_board, 'solution_path': states, 'moves': len(states) - 1, 'time_ms': 0.0, 'target': target})
+        else:
+            conn = get_target_db_connection(target)
+            cur = conn.cursor()
+            cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions WHERE initial_board = ?', (board_state,))
+            row = cur.fetchone()
+            conn.close()
+            if not row:
+                return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
+            return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/health')
 def health_check():
-    """Simple health check endpoint"""
-    return jsonify({'status': 'ready'})
+    if HIPPO_SOURCE == 'bin':
+        available = any((BIN_DIR / TARGET_BIN_MAP[t]).exists() or BIN_URLS.get(t, '') for t in TARGETS)
+        return jsonify({'status': 'ready' if available else 'missing-binaries'})
+    else:
+        available = any(os.path.exists(TARGET_DB_MAP[t]) or DB_URLS.get(t, '') for t in TARGETS)
+        return jsonify({'status': 'ready' if available else 'missing-databases'})
+
 
 if __name__ == '__main__':
-    # Start with minimal initialization - just check that targets index exists
-    if not os.path.exists(TARGETS_INDEX_DB):
-        print(f"❌ Error: {TARGETS_INDEX_DB} not found!")
-        print("Please run: python create_target_databases.py")
-        exit(1)
-    
-    print("🎯 Hippodrome Explorer (Original Enhanced) starting...")
-    print("✅ Target databases ready for on-demand loading")
-    
-    # Use PORT from environment if available (for cloud deployment)
+    print(f"🎯 Hippodrome Explorer (Unified, source={HIPPO_SOURCE}) starting...")
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
