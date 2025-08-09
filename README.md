@@ -18,21 +18,19 @@ g++ -std=c++17 -O3 -pthread hippodrome_solver_working.cpp -o solver
 # Or use the Makefile:
 make
 ```
+
 ### 2. **Start the Web Explorer**
 ```bash
 cd frontend_explorer
 pip install -r requirements.txt
 
-# Create target-specific databases from solution CSV files
-python create_target_databases.py ../solutions_csv/hippodrome_solutions_og.csv
-python create_target_databases.py ../solutions_csv/hippodrome_solutions_first_column.csv
-# ... repeat for other target CSV files
-
-# Start the web server
+# Start the web server (uses compact binary files by default)
 python app.py
 ```
 
 Open http://localhost:5000 in your browser! 🎉
+
+**Note:** The frontend now uses compact binary files (~14-19MB each) instead of large SQLite databases (~130MB each) for much faster loading and deployment.
 
 ## 💻 Usage Examples
 
@@ -60,6 +58,8 @@ Open http://localhost:5000 in your browser! 🎉
 - **`bottom-row`**: Knights must reach the bottom row (positions 12,13,14,15) 
 - **`first-column`**: Knights must reach the first column (positions 0,4,8,12)
 - **`last-column`**: Knights must reach the last column (positions 3,7,11,15)
+- **`center`**: Knights must reach center squares (5,6,9,10)
+- **`corners`**: Knights must reach corner squares (0,3,12,15)
 - **Custom positions**: Specify 4 exact positions like `"0,1,4,5"` or `"2,6,10,14"`
 
 ### **Board Position Layout**
@@ -78,19 +78,33 @@ Open http://localhost:5000 in your browser! 🎉
 - **Multi-threading**: Parallel processing of configurations for performance
 - **State Representation**: 16-character string (e.g., "RKKKBBBBRRxNNNNN")
 
+### Solution Encoding (New!)
+The solver now uses a compact binary format for efficient storage and loading:
+
+- **Bitboard representation**: 8×16-bit integers for board state encoding
+- **Szudzik pairing**: Perfect hash function for board state identification
+- **Compact moves**: 1 byte per move (4 bits for 'from', 4 bits for 'to')
+- **Binary format**: Custom `.bin` files with 85-90% size reduction vs CSV
+
+**File sizes:**
+- **Original CSV**: ~130MB per target
+- **Binary format**: ~14-19MB per target
+- **Compression ratio**: ~7:1 for move data, ~2:1 overall
+
 ### Web Interface Features
 - Interactive board visualization
 - Step-by-step solution playback
 - Multiple playback speeds (0.5x to 4x)
 - Target position highlighting
 - Solution statistics and distribution
+- **New**: Direct binary file loading (faster startup)
 
 ## 🛠️ Building from Source
 
 ### Requirements
 - C++17 compatible compiler (g++, clang++)
 - Python 3.7+
-- SQLite3
+- SQLite3 (optional, for legacy database mode)
 
 ### Compilation Options
 ```bash
@@ -105,13 +119,69 @@ make          # Standard build
 make clean    # Clean build artifacts
 ```
 
-## 🎯 Target Configurations in Frontend
+## 🌐 Cloud Deployment
 
-The web interface supports additional targets not available in the C++ solver:
+The application is designed for easy cloud deployment with compact binary files:
+
+### Quick Deploy on Render
+
+1. **Fork this repository**
+2. **Create a new Web Service on Render**
+3. **Configure the service:**
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `cd frontend_explorer && gunicorn app:app --bind 0.0.0.0:$PORT`
+   - **Environment Variables**:
+     - `HIPPO_SOURCE=bin` (uses binary files)
+     - `BIN_URL_TOP_ROW=https://your-storage/hippodrome_solutions_og.bin`
+     - `BIN_URL_FIRST_COLUMN=https://your-storage/hippodrome_solutions_first_column.bin`
+     - `BIN_URL_LAST_COLUMN=https://your-storage/hippodrome_solutions_last_column.bin`
+     - `BIN_URL_CORNERS=https://your-storage/hippodrome_solutions_corners.bin`
+     - `BIN_URL_CENTER=https://your-storage/hippodrome_solutions_center.bin`
+
+4. **Upload binary files** to object storage (Cloudflare R2, AWS S3, etc.)
+5. **Deploy!**
+
+### Alternative: Database-backed Deployment
+
+If you prefer the legacy SQLite approach:
+- Set `HIPPO_SOURCE=db`
+- Upload SQLite database files instead of binary files
+- Use `DB_URL_*` environment variables
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+
+## 📁 Project Structure
+
+```
+hippodrome-solver-github/
+├── hippodrome_solver_working.cpp    # Main C++ solver
+├── frontend_explorer/
+│   ├── app.py                       # Unified Flask application
+│   ├── static/                      # CSS, JS, images
+│   └── templates/                   # HTML templates
+├── encoded_solutions/               # Compact binary files
+│   ├── hippodrome_solutions_og.bin
+│   ├── hippodrome_solutions_center.bin
+│   └── ...
+├── utils/                           # Python utilities
+│   ├── encode_binary.py            # CSV to binary converter
+│   ├── decode_and_verify.py        # Binary verification tool
+│   └── transform_solutions.py      # Solution transformation
+├── solutions_csv/                   # Original CSV files
+├── render.yaml                      # Render deployment config
+├── Procfile                         # Heroku deployment config
+└── requirements.txt                 # Python dependencies
+```
+
+## 🎯 Target Configurations
+
+The web interface supports all major targets:
+
+- **`top-row`**: Knights must reach the top row (positions 0,1,2,3)
+- **`first-column`**: Knights must reach the first column (positions 0,4,8,12)
+- **`last-column`**: Knights must reach the last column (positions 3,7,11,15)
 - **`center`**: Knights must reach center squares (5,6,9,10)
 - **`corners`**: Knights must reach corner squares (0,3,12,15)
-
-These require pre-computed solution CSV files in the `solutions_csv/` directory.
 
 ## 📝 Notes
 
@@ -120,3 +190,15 @@ These require pre-computed solution CSV files in the `solutions_csv/` directory.
 - The web interface automatically replaces spaces with 'x' in board representations
 - Solution paths are stored as semicolon-separated board states
 - Since there are only 1 available space, and no captures are allowed, this means that the queen functions identically as kings. Thus we treat queens as kings in order to reduce the total amount of board configurations down to just 415k.
+
+## 🔄 Recent Updates
+
+- **Binary encoding**: Implemented compact binary format for 85-90% size reduction
+- **Unified frontend**: Single Flask app supporting both binary and database backends
+- **Cloud deployment**: Optimized for Render, Heroku, and other cloud platforms
+- **Performance**: Faster loading with in-memory binary indexing
+- **Cleanup**: Removed redundant files and organized utilities
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -13,12 +13,14 @@ try:
     from transform_solutions import unpack_moves_from_bytes, apply_move
 except Exception:
     def unpack_moves_from_bytes(data: bytes) -> List[Tuple[int, int]]:
+        """Unpacks a byte string into a list of (from, to) moves."""
         result: List[Tuple[int, int]] = []
         for b in data:
             result.append(((b >> 4) & 0x0F, b & 0x0F))
         return result
 
     def apply_move(board: str, move: Tuple[int, int]) -> str:
+        """Applies a move to a board string and returns the new board string."""
         from_pos, to_pos = move
         if not (0 <= from_pos < 16 and 0 <= to_pos < 16):
             return board
@@ -27,10 +29,13 @@ except Exception:
         board_list[from_pos] = 'x'
         return ''.join(board_list)
 
+# Magic constant for binary file validation
 MAGIC = b'HIPP'
 
+# Directory containing the binary solution files
 BIN_DIR = os.path.join('encoded_solutions')
 
+# Mapping from binary file name keywords to target names
 TARGET_MAP = {
     'og': 'top-row',
     'first_column': 'first-column',
@@ -40,6 +45,7 @@ TARGET_MAP = {
     'bottom': 'bottom-row',
 }
 
+# Predefined target positions for each target name
 TARGET_POSITIONS = {
     'top-row': [0, 1, 2, 3],
     'bottom-row': [12, 13, 14, 15],
@@ -51,6 +57,7 @@ TARGET_POSITIONS = {
 
 
 def parse_bin_path_to_target(bin_path: str) -> str:
+    """Parses the target name from a binary file path."""
     name = os.path.basename(bin_path).lower()
     for key, target in TARGET_MAP.items():
         if key in name:
@@ -60,6 +67,7 @@ def parse_bin_path_to_target(bin_path: str) -> str:
 
 
 def read_bin(bin_path: str):
+    """Reads a binary solution file and yields records."""
     with open(bin_path, 'rb') as f:
         magic = f.read(4)
         if magic != MAGIC:
@@ -75,6 +83,7 @@ def read_bin(bin_path: str):
 
 
 def board_from_bitboards(bitboards: List[int]) -> str:
+    """Reconstructs a board string from a list of bitboards."""
     k1, k2, k3, k4, rooks, bishops, kings, empty = bitboards
     chars = []
     for i in range(16):
@@ -96,6 +105,7 @@ def board_from_bitboards(bitboards: List[int]) -> str:
 
 
 def reconstruct_states(initial_board: str, moves_bytes: bytes) -> List[str]:
+    """Reconstructs the full solution path from an initial board and a series of moves."""
     moves: List[Tuple[int, int]] = unpack_moves_from_bytes(moves_bytes)
     states = [initial_board]
     current = initial_board
@@ -106,6 +116,7 @@ def reconstruct_states(initial_board: str, moves_bytes: bytes) -> List[str]:
 
 
 def create_db_for_target(bin_path: str, target_name: str) -> str:
+    """Creates a SQLite database for a given target from a binary solution file."""
     db_path = f"hippodrome_{target_name.replace('-', '_')}.db"
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -165,6 +176,7 @@ def create_db_for_target(bin_path: str, target_name: str) -> str:
 
 
 def create_targets_index(db_files: List[str]):
+    """Creates a main index database that points to the individual target databases."""
     index_path = 'targets_index.db'
     if os.path.exists(index_path):
         os.remove(index_path)
@@ -197,6 +209,7 @@ def create_targets_index(db_files: List[str]):
 
 
 def main():
+    """Main function to find binary files and create databases."""
     if not os.path.isdir(BIN_DIR):
         print(f"❌ Directory not found: {BIN_DIR}")
         return 1
@@ -229,4 +242,4 @@ def main():
     return 0
 
 if __name__ == '__main__':
-    raise SystemExit(main()) 
+    raise SystemExit(main())

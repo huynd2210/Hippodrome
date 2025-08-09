@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+"""
+This script runs a Flask web application for exploring Hippodrome puzzle solutions.
+It provides a frontend interface and a set of API endpoints to query solution data.
+
+The application can be configured to use two different backend data sources:
+1.  'bin': Reads data directly from compact binary files. This is the default.
+2.  'db': Connects to SQLite databases for solution data.
+
+The backend can be selected by setting the HIPPO_SOURCE environment variable.
+"""
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 import os
@@ -10,11 +21,14 @@ import hashlib
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
+# Initialize the Flask application
 app = Flask(__name__)
 CORS(app)
 
-# Backend source: 'bin' (default) reads compact binary files; 'db' uses SQLite
+# Determine the backend data source from environment variables (default to 'bin')
 HIPPO_SOURCE = os.environ.get('HIPPO_SOURCE', 'bin').lower()
+
+# --- Configuration and Constants ---
 
 # Directories
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -63,11 +77,13 @@ DB_URLS = {
     'center': os.environ.get('DB_URL_CENTER', ''),
 }
 
+# Caching for downloaded files
 CACHE_DIR = Path(tempfile.gettempdir()) / 'hippodrome_cache'
 CACHE_DIR.mkdir(exist_ok=True)
 
 
 def download_to_cache(url: str, key_hint: str) -> Optional[str]:
+    """Downloads a file from a URL to a local cache directory."""
     if not url:
         return None
     h = hashlib.md5(url.encode()).hexdigest()
@@ -84,6 +100,7 @@ def download_to_cache(url: str, key_hint: str) -> Optional[str]:
 # --------------- BIN BACKEND ---------------
 
 def board_from_bitboards(bitboards: List[int]) -> str:
+    """Reconstructs a board string from a list of bitboards."""
     k1, k2, k3, k4, rooks, bishops, kings, empty = bitboards
     chars = []
     for i in range(16):
@@ -103,9 +120,11 @@ def board_from_bitboards(bitboards: List[int]) -> str:
     return ''.join(chars)
 
 def unpack_moves_from_bytes(data: bytes) -> List[Tuple[int, int]]:
+    """Unpacks a byte string into a list of (from, to) moves."""
     return [(((b >> 4) & 0x0F), (b & 0x0F)) for b in data]
 
 def apply_move(board: str, move: Tuple[int, int]) -> str:
+    """Applies a move to a board string and returns the new board string."""
     from_pos, to_pos = move
     bl = list(board)
     bl[to_pos] = bl[from_pos]
@@ -113,6 +132,7 @@ def apply_move(board: str, move: Tuple[int, int]) -> str:
     return ''.join(bl)
 
 def reconstruct_states(initial_board: str, moves_bytes: bytes) -> List[str]:
+    """Reconstructs the full solution path from an initial board and a series of moves."""
     states = [initial_board]
     current = initial_board
     for mv in unpack_moves_from_bytes(moves_bytes):
@@ -121,6 +141,7 @@ def reconstruct_states(initial_board: str, moves_bytes: bytes) -> List[str]:
     return states
 
 class BinTargetIndex:
+    """An in-memory index for a single binary solution file."""
     def __init__(self, target_name: str):
         self.target = target_name
         self.path = self._resolve_path()
@@ -134,6 +155,7 @@ class BinTargetIndex:
         self.sum_moves = 0
 
     def _resolve_path(self) -> str:
+        """Resolves the path to the binary file, downloading it if necessary."""
         filename = TARGET_BIN_MAP[self.target]
         local_path = BIN_DIR / filename
         if local_path.exists():
@@ -146,11 +168,13 @@ class BinTargetIndex:
         raise FileNotFoundError(f"Binary not found for target {self.target}")
 
     def open(self):
+        """Opens the binary file and builds the in-memory index."""
         if self.file is None:
             self.file = open(self.path, 'rb')
             self._build_index()
 
     def _build_index(self):
+        """Reads the binary file and builds an index of all solution entries."""
         f = self.file
         f.seek(0)
         magic = f.read(4)
@@ -172,6 +196,7 @@ class BinTargetIndex:
             self.entries.append({'id': sid, 'offset': offset, 'initial_board': initial, 'moves_count': mcount})
 
     def _read_entry(self, idx: int):
+        """Reads a single solution entry from the binary file by its index."""
         f = self.file
         meta = self.entries[idx]
         f.seek(meta['offset'])
@@ -182,20 +207,24 @@ class BinTargetIndex:
         return sid, bitboards, moves
 
     def get_by_id(self, sid: int):
+        """Retrieves a solution by its configuration ID."""
         self.open()
         idx = self.id_to_idx.get(sid)
         return None if idx is None else self._read_entry(idx)
 
     def get_random(self):
+        """Retrieves a random solution."""
         self.open()
         return self._read_entry(random.randrange(self.count))
 
     def get_stats(self):
+        """Returns statistics about the solutions in the binary file."""
         self.open()
         avg_moves = (self.sum_moves / self.count) if self.count else 0.0
         return {'total_solutions': self.count, 'avg_moves': round(avg_moves, 2), 'min_moves': self.min_moves or 0, 'max_moves': self.max_moves or 0}
 
     def find_by_board(self, board_state: str):
+        """Finds a solution by its initial board state."""
         self.open()
         for i, meta in enumerate(self.entries):
             if meta['initial_board'] == board_state:
@@ -205,6 +234,7 @@ class BinTargetIndex:
 _BIN_INDICES: Dict[str, BinTargetIndex] = {}
 
 def get_bin_index(target: str) -> BinTargetIndex:
+    """Returns a cached instance of a BinTargetIndex for a given target."""
     if target not in _BIN_INDICES:
         _BIN_INDICES[target] = BinTargetIndex(target)
     return _BIN_INDICES[target]
@@ -213,6 +243,7 @@ def get_bin_index(target: str) -> BinTargetIndex:
 # --------------- DB BACKEND ---------------
 
 def get_target_db_connection(target_name: str):
+    """Returns a connection to the SQLite database for a given target."""
     db_file = TARGET_DB_MAP.get(target_name, f"hippodrome_{target_name.replace('-', '_')}.db")
     if os.path.exists(db_file):
         conn = sqlite3.connect(db_file)
@@ -231,6 +262,7 @@ def get_target_db_connection(target_name: str):
 
 
 def parse_solution_path(solution_path_str: str) -> List[str]:
+    """Parses a semicolon-separated solution path string into a list of board states."""
     if not solution_path_str:
         return []
     return [s for s in solution_path_str.split(';')]
@@ -240,10 +272,12 @@ def parse_solution_path(solution_path_str: str) -> List[str]:
 
 @app.route('/')
 def index():
+    """Serves the main HTML page."""
     return render_template('index.html')
 
 @app.route('/api/targets')
 def get_targets():
+    """Returns a list of available targets."""
     targets = []
     for t in TARGETS:
         if HIPPO_SOURCE == 'bin':
@@ -262,6 +296,7 @@ def get_targets():
 
 @app.route('/api/solution/<int:config_id>')
 def get_solution(config_id):
+    """Returns a specific solution by its configuration ID."""
     target = request.args.get('target', 'top-row')
     try:
         if HIPPO_SOURCE == 'bin':
@@ -287,6 +322,7 @@ def get_solution(config_id):
 
 @app.route('/api/random')
 def get_random_solution():
+    """Returns a random solution."""
     target = request.args.get('target', 'top-row')
     try:
         if HIPPO_SOURCE == 'bin':
@@ -309,6 +345,7 @@ def get_random_solution():
 
 @app.route('/api/search')
 def search_solutions():
+    """Searches for solutions based on a range of moves."""
     target = request.args.get('target', 'top-row')
     min_moves = request.args.get('min_moves', type=int)
     max_moves = request.args.get('max_moves', type=int)
@@ -349,6 +386,7 @@ def search_solutions():
 
 @app.route('/api/stats')
 def get_statistics():
+    """Returns statistics about the solutions for a given target."""
     target = request.args.get('target', 'top-row')
     try:
         if HIPPO_SOURCE == 'bin':
@@ -371,6 +409,7 @@ def get_statistics():
 
 @app.route('/api/search_by_board')
 def search_by_board():
+    """Searches for a solution by its initial board state."""
     board_state = request.args.get('board', '')
     target = request.args.get('target', 'top-row')
     if len(board_state) != 16:
@@ -378,7 +417,7 @@ def search_by_board():
     try:
         if HIPPO_SOURCE == 'bin':
             idx = get_bin_index(target)
-            data = idx.find_by_board(board_state)
+            data = idx.find__by_board(board_state)
             if not data:
                 return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
             sid, bitboards, moves_bytes = data
@@ -399,6 +438,7 @@ def search_by_board():
 
 @app.route('/health')
 def health_check():
+    """A health check endpoint to verify that the application is running and has data."""
     if HIPPO_SOURCE == 'bin':
         available = any((BIN_DIR / TARGET_BIN_MAP[t]).exists() or BIN_URLS.get(t, '') for t in TARGETS)
         return jsonify({'status': 'ready' if available else 'missing-binaries'})

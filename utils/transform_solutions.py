@@ -1,3 +1,8 @@
+"""
+This script provides functions for transforming board states and solution paths
+into more compact representations, such as bitboards and packed move lists.
+These transformations are used to reduce the size of the solution data.
+"""
 import csv
 import json
 import os
@@ -199,8 +204,9 @@ def transform_solutions(input_file, output_file):
     print(f"Finished processing. Output saved to {output_file}")
 
 def main():
-    input_dir = 'C:\\Woodchop\\hippodrome-solver-github\\solutions_csv'
-    output_dir = 'C:\\Woodchop\\hippodrome-solver-github\\encoded_solutions'
+    """Main function to transform all solution CSVs in the solutions_csv directory."""
+    input_dir = 'C:\Woodchop\hippodrome-solver-github\solutions_csv'
+    output_dir = 'C:\Woodchop\hippodrome-solver-github\encoded_solutions'
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""
+This script encodes solution data from a CSV file into a compact binary format.
+This is done to reduce storage space and improve data loading performance.
+"""
 import csv
 import os
 import struct
@@ -12,6 +16,7 @@ from transform_solutions import (
     pack_moves_to_bytes,
 )
 
+# Magic constant and version for binary file format
 MAGIC = b'HIPP'
 VERSION = 1
 
@@ -22,6 +27,7 @@ VERSION = 1
 # - moves: moves_count bytes (each 1 byte, high nibble=from, low nibble=to)
 
 def compute_bitboards(board: str) -> List[int]:
+    """Computes a list of bitboards for a given board string."""
     knights = get_knight_bitboards(board)
     rooks = get_bitboard(board, 'R')
     bishops = get_bitboard(board, 'B')
@@ -30,6 +36,7 @@ def compute_bitboards(board: str) -> List[int]:
     return knights + [rooks, bishops, kings, empty]
 
 def write_binary(csv_path: str, out_path: str) -> int:
+    """Writes solution data from a CSV file to a binary file."""
     with open(csv_path, 'r', newline='', encoding='utf-8', errors='ignore') as infile:
         reader = csv.DictReader(infile)
         rows = list(reader)
@@ -67,4 +74,4 @@ if __name__ == '__main__':
     dst_name = os.path.splitext(os.path.basename(src))[0] + '.bin'
     dst = os.path.join('encoded_solutions', dst_name)
     count = write_binary(src, dst)
-    print(f'Wrote {count} records to {dst}') 
+    print(f'Wrote {count} records to {dst}')

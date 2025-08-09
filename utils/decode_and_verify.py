@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+This script decodes and verifies the integrity of binary solution files.
+It compares the reconstructed data from a binary file with the original data
+from a CSV file to ensure that the encoding process was successful.
+"""
 import csv
 import os
 import struct
@@ -11,11 +16,11 @@ from transform_solutions import (
     apply_move,
 )
 
+# Magic constant for binary file validation
 MAGIC = b'HIPP'
 
-# Read binary produced by encode_binary.py and verify reconstruction
-
 def read_binary(path: str):
+    """Reads a binary solution file and returns the version and a list of entries."""
     with open(path, 'rb') as f:
         magic = f.read(4)
         if magic != MAGIC:
@@ -32,6 +37,7 @@ def read_binary(path: str):
         return version, entries
 
 def reconstruct_from_moves(initial_board: str, moves: List[Tuple[int, int]]) -> List[str]:
+    """Reconstructs the solution path from an initial board and a list of moves."""
     states = [initial_board]
     current = initial_board
     for mv in moves:
@@ -40,6 +46,7 @@ def reconstruct_from_moves(initial_board: str, moves: List[Tuple[int, int]]) -> 
     return states
 
 def verify(csv_path: str, bin_path: str) -> bool:
+    """Verifies the contents of a binary file against a CSV file."""
     # Load CSV
     with open(csv_path, 'r', newline='', encoding='utf-8', errors='ignore') as infile:
         reader = csv.DictReader(infile)
@@ -64,6 +71,7 @@ def verify(csv_path: str, bin_path: str) -> bool:
     return ok_all
 
 def demo_record(csv_path: str, bin_path: str, index: Optional[int], record_id: Optional[int]) -> None:
+    """Displays a single record from both the CSV and binary files for comparison."""
     # Load CSV
     with open(csv_path, 'r', newline='', encoding='utf-8', errors='ignore') as infile:
         reader = csv.DictReader(infile)
@@ -107,7 +115,9 @@ def demo_record(csv_path: str, bin_path: str, index: Optional[int], record_id: O
     print("Match:", original_states == recon_states if original_states else True)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Decode and verify binary solution files against CSV files."
+    )
     parser.add_argument('csv_path', nargs='?', default=os.path.join('solutions_csv', 'first_5_solutions.csv'))
     parser.add_argument('--bin', dest='bin_path', default=None, help='Binary file path; defaults to encoded_solutions/<csvname>.bin')
     parser.add_argument('--index', type=int, default=None, help='Record index to demo')
@@ -125,4 +135,4 @@ if __name__ == '__main__':
     if not args.verify and args.index is None and args.record_id is None:
         # default to verify
         ok = verify(args.csv_path, bin_path)
-        print('OK' if ok else 'FAIL') 
+        print('OK' if ok else 'FAIL')

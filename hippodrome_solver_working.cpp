@@ -1,3 +1,10 @@
+// This program solves a puzzle on a 4x4 board, where the goal is to move four knights ('N')
+// to a target configuration. The other pieces on the board can be King ('K'), Queen ('Q'),
+// Rook ('R'), or Bishop ('B'). The empty space is represented by 'x'.
+// The program uses the A* search algorithm to find the shortest path to the solution.
+// It can solve multiple board configurations in parallel using multiple threads.
+// The board configurations are loaded from a CSV file, and the solutions are saved to another CSV file.
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -14,16 +21,26 @@
 #include <mutex>
 #include <atomic>
 
-// Target configuration for the puzzle
+/**
+ * @brief Represents a target configuration for the puzzle.
+ * A target is defined by a set of 4 board positions that the knights must occupy.
+ */
 struct Target {
-    std::vector<int> positions;
-    std::string name;
+    std::vector<int> positions; // The target positions, represented as indices from 0 to 15.
+    std::string name;           // A descriptive name for the target (e.g., "top-row").
     
+    /**
+     * @brief Constructor for a Target.
+     * @param pos A vector of 4 integers representing the target positions.
+     * @param n A string representing the name of the target.
+     */
     Target(const std::vector<int>& pos, const std::string& n) 
         : positions(pos), name(n) {}
 };
 
-// Predefined targets
+/**
+ * @brief A namespace for predefined, commonly used target configurations.
+ */
 namespace Targets {
     const Target TOP_ROW({0, 1, 2, 3}, "top-row");
     const Target BOTTOM_ROW({12, 13, 14, 15}, "bottom-row");
@@ -31,7 +48,12 @@ namespace Targets {
     const Target LAST_COLUMN({3, 7, 11, 15}, "last-column");
 }
 
-// Function to parse target from string
+/**
+ * @brief Parses a target configuration from a string.
+ * @param target_str The string to parse. It can be a predefined target name (e.g., "top-row") 
+ * or a custom, comma-separated list of 4 board positions (e.g., "0,1,4,5").
+ * @return A Target object.
+ */
 Target parse_target(const std::string& target_str) {
     if (target_str == "top-row") return Targets::TOP_ROW;
     if (target_str == "bottom-row") return Targets::BOTTOM_ROW;
@@ -62,7 +84,13 @@ Target parse_target(const std::string& target_str) {
     return Targets::TOP_ROW;
 }
 
-// Calculate minimum knight moves from position to any target position
+/**
+ * @brief Calculates the minimum number of knight moves required to get from a given
+ * starting position to any of the target positions.
+ * @param from_pos The starting position of the knight.
+ * @param target The target configuration.
+ * @return The minimum number of knight moves.
+ */
 int knight_distance_to_targets(int from_pos, const Target& target) {
     int from_row = from_pos / 4;
     int from_col = from_pos % 4;
@@ -72,7 +100,7 @@ int knight_distance_to_targets(int from_pos, const Target& target) {
         int target_row = target_pos / 4;
         int target_col = target_pos % 4;
         
-        // Use BFS to find exact knight distance (more accurate than heuristic)
+        // Use Breadth-First Search (BFS) to find the exact knight distance.
         std::queue<std::pair<int, int>> q; // (position, distance)
         std::unordered_set<int> visited;
         
@@ -116,14 +144,19 @@ int knight_distance_to_targets(int from_pos, const Target& target) {
     return min_distance == INT_MAX ? 0 : min_distance;
 }
 
-// Represents a state in the A* search
+/**
+ * @brief Represents a state in the A* search algorithm.
+ */
 struct State {
-    int f_score;
-    int g_score;
-    std::vector<std::string> path;
-    std::string board;
+    int f_score; // f_score = g_score + h_score
+    int g_score; // The cost of the path from the start node to this node.
+    std::vector<std::string> path; // The sequence of board states to reach this state.
+    std::string board; // The current board configuration as a 16-character string.
 
-    // For the priority queue comparison
+    /**
+     * @brief Overloads the greater-than operator for the priority queue.
+     * The priority queue will store states with the lowest f_score at the top.
+     */
     bool operator>(const State& other) const {
         return f_score > other.f_score;
     }
@@ -139,10 +172,20 @@ std::vector<std::pair<int, std::string>> load_configs_from_csv(const std::string
 void save_batch_to_csv(const std::vector<std::tuple<int, std::string, std::vector<std::string>, int, double>>& solutions, const std::string& filename);
 
 // --- Threading Support ---
-std::mutex output_mutex;
-std::mutex results_mutex;
-std::atomic<int> completed_count{0};
+std::mutex output_mutex; // Mutex to protect console output from concurrent access.
+std::mutex results_mutex; // Mutex to protect the shared results vector.
+std::atomic<int> completed_count{0}; // Atomic counter for tracking overall progress.
 
+/**
+ * @brief This function is executed by each thread to process a range of board configurations.
+ * @param configs The vector of all board configurations.
+ * @param start_idx The starting index of the range to process.
+ * @param end_idx The ending index of the range to process.
+ * @param thread_id The ID of the current thread.
+ * @param shared_results A reference to the shared vector of solutions.
+ * @param total_configs The total number of configurations being processed.
+ * @param target The target configuration.
+ */
 void process_configs_range(
     const std::vector<std::pair<int, std::string>>& configs,
     int start_idx, 
@@ -203,12 +246,20 @@ void process_configs_range(
 }
 
 // --- Range Parsing Functions ---
+/**
+ * @brief A simple struct to hold a start and end index for a range.
+ */
 struct Range {
     int start;
     int end;
     bool valid;
 };
 
+/**
+ * @brief Parses a range string (e.g., "5-10", "5->10", "5..10", "10") into a Range struct.
+ * @param range_str The string to parse.
+ * @return A Range object.
+ */
 Range parse_range(const std::string& range_str) {
     Range range = {0, 0, false};
     
@@ -264,6 +315,10 @@ Range parse_range(const std::string& range_str) {
     return range;
 }
 
+/**
+ * @brief Prints the command-line usage instructions for the program.
+ * @param program_name The name of the program executable.
+ */
 void print_usage(const char* program_name) {
     std::cout << "Usage: " << program_name << " [range] [threads] [target]\n"
               << "Examples:\n"
@@ -287,8 +342,14 @@ void print_usage(const char* program_name) {
 }
 
 // --- Heuristics and Moves ---
-const int TARGET_PENALTY = 100; // Define a penalty for non-knight pieces in target positions
+const int TARGET_PENALTY = 100; // A penalty applied when a non-knight piece occupies a target square.
 
+/**
+ * @brief Calculates the heuristic value (h_score) for the A* algorithm.
+ * @param board The current board state.
+ * @param target The target configuration.
+ * @return The heuristic value.
+ */
 int calculate_heuristic(const std::string& board, const Target& target) {
     int total_heuristic = 0;
 
@@ -297,10 +358,10 @@ int calculate_heuristic(const std::string& board, const Target& target) {
 
     for (int i = 0; i < 16; ++i) {
         if (board[i] == 'N') {
-            // Calculate minimum distance from this knight to any target position
+            // Add the minimum distance from this knight to any target position.
             total_heuristic += knight_distance_to_targets(i, target);
         } else if (target_positions.count(i) && board[i] != 'x') {
-            // Penalty for non-knight pieces in target positions
+            // Add a penalty for non-knight pieces in target positions.
             total_heuristic += TARGET_PENALTY;
         }
     }
@@ -308,25 +369,40 @@ int calculate_heuristic(const std::string& board, const Target& target) {
     return total_heuristic;
 }
 
+/**
+ * @brief Checks if a move from (r1, c1) to (r2, c2) is valid for a given piece type.
+ * @param piece The piece to move.
+ * @param r1 The starting row.
+ * @param c1 The starting column.
+ * @param r2 The ending row.
+ * @param c2 The ending column.
+ * @return True if the move is valid, false otherwise.
+ */
 bool is_valid_move(char piece, int r1, int c1, int r2, int c2) {
     int dr = std::abs(r1 - r2);
     int dc = std::abs(c1 - c2);
 
-    if (piece == 'N') {
+    if (piece == 'N') { // Knight moves in an L-shape.
         return (dr == 1 && dc == 2) || (dr == 2 && dc == 1);
     }
 
+    // For other pieces, the move must be to an adjacent square.
     bool is_adjacent = (std::max(dr, dc) == 1);
     if (!is_adjacent) return false;
 
-    if (piece == 'K' || piece == 'Q') return true;
-    if (piece == 'R') return r1 == r2 || c1 == c2;
-    if (piece == 'B') return dr == dc;
+    if (piece == 'K' || piece == 'Q') return true; // King and Queen can move to any adjacent square.
+    if (piece == 'R') return r1 == r2 || c1 == c2; // Rook can move horizontally or vertically.
+    if (piece == 'B') return dr == dc; // Bishop can move diagonally.
 
     return false;
 }
 
 // --- Board Operations ---
+/**
+ * @brief Generates all possible next board states from the current board state.
+ * @param board The current board state.
+ * @return A vector of strings, where each string is a possible next board state.
+ */
 std::vector<std::string> get_next_states(const std::string& board) {
     std::vector<std::string> next_states;
     
@@ -339,14 +415,16 @@ std::vector<std::string> get_next_states(const std::string& board) {
     int empty_col = empty_index % 4;
 
     for (int i = 0; i < 16; ++i) {
-        if (board[i] != 'x') { // Skip empty spaces
+        if (board[i] != 'x') { // For each piece on the board...
             int piece_row = i / 4;
             int piece_col = i % 4;
 
+            // ...if it's a valid move to the empty square...
             if (is_valid_move(board[i], piece_row, piece_col, empty_row, empty_col)) {
                 std::string new_board = board;
+                // ...swap the piece with the empty square.
                 new_board[empty_index] = board[i];
-                new_board[i] = 'x'; // Set the piece's old position to empty
+                new_board[i] = 'x';
                 next_states.push_back(new_board);
             }
         }
@@ -355,6 +433,10 @@ std::vector<std::string> get_next_states(const std::string& board) {
     return next_states;
 }
 
+/**
+ * @brief Prints a 4x4 representation of the board to the console.
+ * @param board_str The board state as a 16-character string.
+ */
 void print_board(const std::string& board_str) {
     std::cout << "+---+---+---+---+" << std::endl;
     for (int i = 0; i < 4; ++i) {
@@ -367,14 +449,21 @@ void print_board(const std::string& board_str) {
 }
 
 // --- A* Solver ---
+/**
+ * @brief The main A* search algorithm to solve the Hippodrome puzzle.
+ * @param initial_board_str The initial board state as a 16-character string.
+ * @param target The target configuration.
+ * @return A vector of strings representing the solution path. If no solution is found, the vector is empty.
+ */
 std::vector<std::string> solve_hippodrome(const std::string& initial_board_str, const Target& target) {
     if (initial_board_str.length() != 16) {
         std::cerr << "Error: Input string must be 16 characters long." << std::endl;
         return {};
     }
 
+    // Lambda function to check if the current board state is the goal state.
     auto is_goal_state = [&target](const std::string& board) {
-        // Check if all target positions contain knights
+        // Check if all target positions are occupied by knights.
         for (int pos : target.positions) {
             if (board[pos] != 'N') {
                 return false;
@@ -383,7 +472,9 @@ std::vector<std::string> solve_hippodrome(const std::string& initial_board_str, 
         return true;
     };
 
+    // A priority queue to store states to visit, ordered by f_score.
     std::priority_queue<State, std::vector<State>, std::greater<State>> pq;
+    // A set to keep track of visited board states to avoid cycles.
     std::unordered_set<std::string> visited;
 
     int initial_heuristic = calculate_heuristic(initial_board_str, target);
@@ -399,7 +490,7 @@ std::vector<std::string> solve_hippodrome(const std::string& initial_board_str, 
         visited.insert(current.board);
 
         if (is_goal_state(current.board)) {
-            return current.path;
+            return current.path; // Solution found
         }
 
         int new_g_score = current.g_score + 1;
@@ -414,10 +505,15 @@ std::vector<std::string> solve_hippodrome(const std::string& initial_board_str, 
         }
     }
 
-    return {};
+    return {}; // No solution found
 }
 
 // --- CSV Functions ---
+/**
+ * @brief Loads board configurations from a CSV file.
+ * @param csv_path The path to the CSV file.
+ * @return A vector of pairs, where each pair contains the ID and the board string.
+ */
 std::vector<std::pair<int, std::string>> load_configs_from_csv(const std::string& csv_path) {
     std::vector<std::pair<int, std::string>> configs;
     std::ifstream file(csv_path);
@@ -462,6 +558,11 @@ std::vector<std::pair<int, std::string>> load_configs_from_csv(const std::string
     return configs;
 }
 
+/**
+ * @brief Saves the solutions to a CSV file.
+ * @param solutions The vector of solutions to save.
+ * @param filename The name of the output CSV file.
+ */
 void save_batch_to_csv(const std::vector<std::tuple<int, std::string, std::vector<std::string>, int, double>>& solutions, const std::string& filename) {
     if (solutions.empty()) {
         std::cout << "No solutions to save." << std::endl;
@@ -491,6 +592,12 @@ void save_batch_to_csv(const std::vector<std::tuple<int, std::string, std::vecto
 }
 
 // --- Main ---
+/**
+ * @brief The main entry point of the program.
+ * @param argc The number of command-line arguments.
+ * @param argv An array of command-line arguments.
+ * @return 0 on success, 1 on error.
+ */
 int main(int argc, char* argv[]) {
     std::string csv_path = "filtered_hippodrome_configs.csv";
     std::vector<std::pair<int, std::string>> configs = load_configs_from_csv(csv_path);
@@ -599,7 +706,7 @@ int main(int argc, char* argv[]) {
     auto overall_start = std::chrono::high_resolution_clock::now();
     
     if (num_threads == 1) {
-        // Single-threaded mode (original behavior)
+        // Single-threaded mode
         for (int i = range.start; i <= range.end; ++i) {
             const auto& config = configs[i];
             int id = config.first;
