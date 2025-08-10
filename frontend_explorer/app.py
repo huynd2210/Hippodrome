@@ -314,6 +314,48 @@ def get_bin_index(target: str) -> BinTargetIndex:
     return _BIN_INDICES[target]
 
 
+# --------------- SOLUTION CACHING ---------------
+RANDOM_SOLUTION_CACHE: Dict[str, List] = {}
+CACHE_LOCK = threading.Lock()
+CACHE_SIZE = 10
+
+def fill_one_solution_for_cache(target: str):
+    """Fetches one random solution and adds it to the cache."""
+    try:
+        if HIPPO_SOURCE == 'bin':
+            idx = get_bin_index(target)
+            sid, bitboards, moves_bytes = idx.get_random()
+            initial_board = board_from_bitboards(bitboards)
+            states = reconstruct_states(initial_board, moves_bytes)
+            if not states or states[0] != initial_board:
+                return  # Skip corrupted data
+
+            solution = {'id': sid, 'initial_board': initial_board, 'solution_path': states, 'moves': len(states) - 1, 'time_ms': 0.0, 'target': target}
+        else: # db
+            conn = get_target_db_connection(target)
+            cur = conn.cursor()
+            cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions ORDER BY RANDOM() LIMIT 1')
+            row = cur.fetchone()
+            conn.close()
+            if not row:
+                return
+            solution = {'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target}
+
+        with CACHE_LOCK:
+            if target not in RANDOM_SOLUTION_CACHE:
+                RANDOM_SOLUTION_CACHE[target] = []
+            if len(RANDOM_SOLUTION_CACHE[target]) < CACHE_SIZE:
+                RANDOM_SOLUTION_CACHE[target].append(solution)
+
+    except Exception as e:
+        print(f"Error filling cache for target {target}: {e}")
+
+def start_background_caching(target: str):
+    """Starts a background thread to cache one solution."""
+    thread = threading.Thread(target=fill_one_solution_for_cache, args=(target,))
+    thread.daemon = True
+    thread.start()
+
 # --------------- DB BACKEND ---------------
 
 def get_target_db_connection(target_name: str):
@@ -354,18 +396,21 @@ def get_targets():
     """Returns a list of available targets."""
     targets = []
     for t in TARGETS:
-        if HIPPO_SOURCE == 'bin':
-            fname = TARGET_BIN_MAP[t]
-            local = (BIN_DIR / fname).exists()
-            remote = bool(BIN_URLS.get(t, ''))
-            if not (local or remote):
-                continue
-        else:
-            local = os.path.exists(TARGET_DB_MAP[t])
-            remote = bool(DB_URLS.get(t, ''))
-            if not (local or remote):
-                continue
-        targets.append({'name': t, 'positions': ','.join(map(str, TARGET_POSITIONS.get(t, []))), 'description': t})
+        try:
+            if HIPPO_SOURCE == 'bin':
+                fname = TARGET_BIN_MAP[t]
+                local = (BIN_DIR / fname).exists()
+                remote = bool(BIN_URLS.get(t, ''))
+                if not (local or remote):
+                    continue
+            else:
+                local = os.path.exists(TARGET_DB_MAP[t])
+                remote = bool(DB_URLS.get(t, ''))
+                if not (local or remote):
+                    continue
+            targets.append({'name': t, 'positions': ','.join(map(str, TARGET_POSITIONS.get(t, []))), 'description': t})
+        except KeyError:
+            continue # Skip targets not in map
     return jsonify(targets)
 
 @app.route('/api/solution/<int:config_id>')
@@ -389,18 +434,31 @@ def get_solution(config_id):
             cur = conn.cursor()
             cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions WHERE id = ?', (config_id,))
             row = cur.fetchone()
-        conn.close()
-        if not row:
-            return jsonify({'error': f'Solution not found for config {config_id} with target {target}'}), 404
+            conn.close()
+            if not row:
+                return jsonify({'error': f'Solution not found for config {config_id} with target {target}'}), 404
             return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/random')
 def get_random_solution():
-    """Returns a random solution."""
-    target = request.args.get('target', 'top-row') 
+    """Returns a random solution, using a cache."""
+    target = request.args.get('target', 'top-row')
+
+    with CACHE_LOCK:
+        if target in RANDOM_SOLUTION_CACHE and RANDOM_SOLUTION_CACHE[target]:
+            solution = RANDOM_SOLUTION_CACHE[target].pop(0)
+            start_background_caching(target)  # Refill the cache
+            return jsonify(solution)
+
+    # Cache miss: generate synchronously and trigger background caching
     try:
+        print(f"Cache miss for target '{target}'. Generating synchronously and starting cache fill.")
+        # Immediately start filling the cache for future requests
+        for _ in range(CACHE_SIZE):
+            start_background_caching(target)
+
         if HIPPO_SOURCE == 'bin':
             idx = get_bin_index(target)
             sid, bitboards, moves_bytes = idx.get_random()
@@ -414,12 +472,13 @@ def get_random_solution():
             cur = conn.cursor()
             cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions ORDER BY RANDOM() LIMIT 1')
             row = cur.fetchone()
-        conn.close()
-        if not row:
-            return jsonify({'error': f'No solutions found for target {target}'}), 404
+            conn.close()
+            if not row:
+                return jsonify({'error': f'No solutions found for target {target}'}), 404
             return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/search')
 def search_solutions():
@@ -445,20 +504,20 @@ def search_solutions():
         else:
             conn = get_target_db_connection(target)
             cur = conn.cursor()
-        query = 'SELECT id, initial_board, moves, time_ms FROM solutions WHERE 1=1'
-        params = []
-        if min_moves is not None:
-            query += ' AND moves >= ?'
-            params.append(min_moves)
-        if max_moves is not None:
-            query += ' AND moves <= ?'
-            params.append(max_moves)
-        query += ' ORDER BY moves ASC LIMIT ?'
-        params.append(limit)
-        cur.execute(query, params)
-        results = [dict(row) for row in cur.fetchall()]
-        conn.close()
-        return jsonify(results)
+            query = 'SELECT id, initial_board, moves, time_ms FROM solutions WHERE 1=1'
+            params = []
+            if min_moves is not None:
+                query += ' AND moves >= ?'
+                params.append(min_moves)
+            if max_moves is not None:
+                query += ' AND moves <= ?'
+                params.append(max_moves)
+            query += ' ORDER BY moves ASC LIMIT ?'
+            params.append(limit)
+            cur.execute(query, params)
+            results = [dict(row) for row in cur.fetchall()]
+            conn.close()
+            return jsonify(results)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -509,9 +568,9 @@ def search_by_board():
             cur = conn.cursor()
             cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions WHERE initial_board = ?', (board_state,))
             row = cur.fetchone()
-        conn.close()
-        if not row:
-            return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
+            conn.close()
+            if not row:
+                return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
             return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -528,6 +587,25 @@ def health_check():
 
 
 if __name__ == '__main__':
+    # Pre-populate the cache for all available targets
+    print("Starting to pre-populate random solution cache in the background...")
+    available_targets = []
+    for t in TARGETS:
+        try:
+            if HIPPO_SOURCE == 'bin':
+                if (BIN_DIR / TARGET_BIN_MAP[t]).exists() or BIN_URLS.get(t, ''):
+                    available_targets.append(t)
+            else:
+                if os.path.exists(TARGET_DB_MAP[t]) or DB_URLS.get(t, ''):
+                    available_targets.append(t)
+        except KeyError:
+            continue
+    
+    for target in available_targets:
+        for _ in range(CACHE_SIZE):
+            start_background_caching(target)
+    print("Cache pre-population threads started.")
+
     print(f"🎯 Hippodrome Explorer (Unified, source={HIPPO_SOURCE}) starting...")
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
