@@ -232,6 +232,19 @@ class HippodromeExplorer {
     }
 
     /**
+     * Clears the solution info display to show a loading state.
+     */
+    clearSolutionDisplay() {
+        this.currentSolution = null;
+        this.stopPlayback();
+        this.currentId.textContent = '...';
+        this.currentMoves.textContent = '...';
+        this.currentStepDisplay.textContent = '- / -';
+        this.configIdInput.value = '';
+        this.progressFill.style.width = '0%';
+    }
+
+    /**
      * Loads a specific solution from the API based on the configuration ID.
      */
     async loadSolution() {
@@ -243,6 +256,7 @@ class HippodromeExplorer {
         }
         
         this.showLoading();
+        this.clearSolutionDisplay();
         try {
             const response = await fetch(`/api/solution/${configId}?target=${this.currentTarget}`);
             const data = await response.json();
@@ -254,7 +268,6 @@ class HippodromeExplorer {
             
             this.currentSolution = data;
             this.currentStep = 0;
-            this.stopPlayback();
             this.updateUI();
             this.displayBoard(data.solution_path[0]);
             
@@ -271,6 +284,7 @@ class HippodromeExplorer {
      */
     async loadRandomSolution() {
         this.showLoading();
+        this.clearSolutionDisplay();
         try {
             const response = await fetch(`/api/random?target=${this.currentTarget}`);
             const data = await response.json();
@@ -282,7 +296,6 @@ class HippodromeExplorer {
             
             this.currentSolution = data;
             this.currentStep = 0;
-            this.stopPlayback();
             this.updateUI();
             this.displayBoard(data.solution_path[0]);
             
@@ -654,6 +667,7 @@ class HippodromeExplorer {
         }
         
         this.showLoading();
+        this.clearSolutionDisplay();
         try {
             const response = await fetch(`/api/search_by_board?board=${this.editorBoardState}&target=${this.currentTarget}`);
             const data = await response.json();

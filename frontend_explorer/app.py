@@ -256,7 +256,8 @@ class BinTargetIndex:
         if idx is None:
             return None
         try:
-            return self._read_entry(idx)
+            with self._lock:
+                return self._read_entry(idx)
         except IndexError:
             return None
 
@@ -265,11 +266,15 @@ class BinTargetIndex:
         self.open()
         if self.count <= 0:
             raise IndexError('no entries in index')
+        
+        rand_idx = random.randrange(self.count)
         try:
-            return self._read_entry(random.randrange(self.count))
+            with self._lock:
+                return self._read_entry(rand_idx)
         except IndexError:
             # Retry once on transient out-of-range
-            return self._read_entry(0)
+            with self._lock:
+                return self._read_entry(0)
 
     def get_stats(self):
         """Returns statistics about the solutions in the binary file."""
@@ -280,9 +285,15 @@ class BinTargetIndex:
     def find_by_board(self, board_state: str):
         """Finds a solution by its initial board state."""
         self.open()
+        found_idx = -1
         for i, meta in enumerate(self.entries):
             if meta['initial_board'] == board_state:
-                return self._read_entry(i)
+                found_idx = i
+                break
+        
+        if found_idx != -1:
+            with self._lock:
+                return self._read_entry(found_idx)
         return None
 
     def _persist_index(self):
@@ -317,7 +328,7 @@ def get_bin_index(target: str) -> BinTargetIndex:
 # --------------- SOLUTION CACHING ---------------
 RANDOM_SOLUTION_CACHE: Dict[str, List] = {}
 CACHE_LOCK = threading.Lock()
-CACHE_SIZE = 10
+CACHE_SIZE = 50
 
 def fill_one_solution_for_cache(target: str):
     """Fetches one random solution and adds it to the cache."""
