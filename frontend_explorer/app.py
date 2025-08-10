@@ -18,6 +18,7 @@ import struct
 import urllib.request
 import tempfile
 import hashlib
+import threading
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
@@ -161,6 +162,7 @@ class BinTargetIndex:
         self.min_moves = None
         self.max_moves = None
         self.sum_moves = 0
+        self._lock = threading.Lock()
 
     def _resolve_path(self) -> str:
         """Resolves the path to the binary file, downloading it if necessary."""
@@ -178,13 +180,15 @@ class BinTargetIndex:
     def open(self):
         """Opens the binary file and builds the in-memory index."""
         if self.file is None:
-            self.file = open(self.path, 'rb')
-            self._build_index()
-            # After building index from scan, persist sidecar for faster startups
-            try:
-                self._persist_index()
-            except Exception:
-                pass
+            with self._lock:
+                if self.file is None:
+                    self.file = open(self.path, 'rb')
+                    self._build_index()
+                    # After building index from scan, persist sidecar for faster startups
+                    try:
+                        self._persist_index()
+                    except Exception:
+                        pass
 
     def _build_index(self):
         """Reads a sidecar index if present; otherwise scans the binary to build one."""
@@ -316,9 +320,9 @@ def get_target_db_connection(target_name: str):
     """Returns a connection to the SQLite database for a given target."""
     db_file = TARGET_DB_MAP.get(target_name, f"hippodrome_{target_name.replace('-', '_')}.db")
     if os.path.exists(db_file):
-    conn = sqlite3.connect(db_file)
-    conn.row_factory = sqlite3.Row
-    return conn
+        conn = sqlite3.connect(db_file)
+        conn.row_factory = sqlite3.Row
+        return conn
     # remote
     url = DB_URLS.get(target_name, '')
     if not url:
@@ -362,7 +366,7 @@ def get_targets():
             if not (local or remote):
                 continue
         targets.append({'name': t, 'positions': ','.join(map(str, TARGET_POSITIONS.get(t, []))), 'description': t})
-        return jsonify(targets)
+    return jsonify(targets)
 
 @app.route('/api/solution/<int:config_id>')
 def get_solution(config_id):
@@ -381,7 +385,7 @@ def get_solution(config_id):
                 return jsonify({'error': 'Corrupted solution data'}), 500
             return jsonify({'id': sid, 'initial_board': initial_board, 'solution_path': states, 'moves': len(states) - 1, 'time_ms': 0.0, 'target': target})
         else:
-        conn = get_target_db_connection(target)
+            conn = get_target_db_connection(target)
             cur = conn.cursor()
             cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions WHERE id = ?', (config_id,))
             row = cur.fetchone()
@@ -406,7 +410,7 @@ def get_random_solution():
                 return jsonify({'error': 'Corrupted solution data'}), 500
             return jsonify({'id': sid, 'initial_board': initial_board, 'solution_path': states, 'moves': len(states) - 1, 'time_ms': 0.0, 'target': target})
         else:
-        conn = get_target_db_connection(target)
+            conn = get_target_db_connection(target)
             cur = conn.cursor()
             cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions ORDER BY RANDOM() LIMIT 1')
             row = cur.fetchone()
@@ -439,7 +443,7 @@ def search_solutions():
                     break
             return jsonify(results)
         else:
-        conn = get_target_db_connection(target)
+            conn = get_target_db_connection(target)
             cur = conn.cursor()
         query = 'SELECT id, initial_board, moves, time_ms FROM solutions WHERE 1=1'
         params = []
@@ -451,8 +455,8 @@ def search_solutions():
             params.append(max_moves)
         query += ' ORDER BY moves ASC LIMIT ?'
         params.append(limit)
-            cur.execute(query, params)
-            results = [dict(row) for row in cur.fetchall()]
+        cur.execute(query, params)
+        results = [dict(row) for row in cur.fetchall()]
         conn.close()
         return jsonify(results)
     except Exception as e:
@@ -468,7 +472,7 @@ def get_statistics():
             s = idx.get_stats()
             return jsonify({'target': target, 'total_solutions': s['total_solutions'], 'avg_moves': s['avg_moves'], 'min_moves': s['min_moves'], 'max_moves': s['max_moves'], 'avg_time_ms': 0.0, 'move_distribution': []})
         else:
-        conn = get_target_db_connection(target)
+            conn = get_target_db_connection(target)
             cur = conn.cursor()
             cur.execute('SELECT COUNT(*) as total FROM solutions')
             total = cur.fetchone()[0]
@@ -476,7 +480,7 @@ def get_statistics():
             avg_moves, min_moves, max_moves = cur.fetchone()
             cur.execute('SELECT AVG(time_ms) FROM solutions')
             avg_time = cur.fetchone()[0]
-        conn.close()
+            conn.close()
             return jsonify({'target': target, 'total_solutions': total, 'avg_moves': round(avg_moves, 2), 'min_moves': min_moves, 'max_moves': max_moves, 'avg_time_ms': round(avg_time, 2), 'move_distribution': []})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -501,7 +505,7 @@ def search_by_board():
                 return jsonify({'error': 'Corrupted solution data'}), 500
             return jsonify({'id': sid, 'initial_board': initial_board, 'solution_path': states, 'moves': len(states) - 1, 'time_ms': 0.0, 'target': target})
         else:
-        conn = get_target_db_connection(target)
+            conn = get_target_db_connection(target)
             cur = conn.cursor()
             cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions WHERE initial_board = ?', (board_state,))
             row = cur.fetchone()
