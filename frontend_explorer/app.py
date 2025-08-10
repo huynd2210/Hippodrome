@@ -28,10 +28,11 @@ app = Flask(__name__)
 CORS(app)
 
 # --- Logging Configuration ---
-# Configure logging to output to the console
+# Remove default handlers to avoid duplicate logs and set a new, shorter format
+app.logger.handlers.clear()
 app.logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 # --- End Logging Configuration ---
@@ -152,13 +153,11 @@ def reconstruct_states(initial_board: str, moves_bytes: bytes) -> List[str]:
     for mv in unpack_moves_from_bytes(moves_bytes):
         try:
             from_pos, to_pos = mv
-            # Defensive bounds check to avoid IndexError on corrupted data
             if not (0 <= from_pos < 16 and 0 <= to_pos < 16):
                 continue
             current = apply_move(current, (from_pos, to_pos))
             states.append(current)
         except IndexError:
-            # Stop reconstruction on invalid move to avoid server error
             break
     return states
 
@@ -167,7 +166,7 @@ class BinTargetIndex:
     def __init__(self, target_name: str):
         self.target = target_name
         self.path = self._resolve_path()
-        self.file = None  # type: Optional[object]
+        self.file = None
         self.version = 0
         self.count = 0
         self.entries: List[Dict] = []
@@ -183,7 +182,6 @@ class BinTargetIndex:
         local_path = BIN_DIR / filename
         if local_path.exists():
             return str(local_path)
-        # Try remote URL
         url = BIN_URLS.get(self.target, '')
         cached = download_to_cache(url, f"{self.target}.bin") if url else None
         if cached:
@@ -191,19 +189,20 @@ class BinTargetIndex:
         raise FileNotFoundError(f"Binary not found for target {self.target}")
 
     def open(self):
-        """Opens the binary file and builds the in-memory index."""
-        if self.file is None:
-            with self._lock:
-                if self.file is None:
-                    app.logger.info(f"Opening and building index for {self.target}...")
-                    self.file = open(self.path, 'rb')
-                    self._build_index()
-                    app.logger.info(f"Index for {self.target} built. Solutions: {self.count}")
-                    # After building index from scan, persist sidecar for faster startups
-                    try:
-                        self._persist_index()
-                    except Exception as e:
-                        app.logger.error(f"Failed to persist index for {self.target}: {e}", exc_info=True)
+        """Opens the binary file and builds the in-memory index; blocks until ready."""
+        if self.count > 0:
+            return
+        with self._lock:
+            if self.count > 0:
+                return
+            app.logger.info(f"Opening and building index for {self.target}...")
+            self.file = open(self.path, 'rb')
+            self._build_index()
+            app.logger.info(f"Index for {self.target} built. Solutions: {self.count}")
+            try:
+                self._persist_index()
+            except Exception as e:
+                app.logger.error(f"Failed to persist index for {self.target}: {e}", exc_info=True)
 
     def _build_index(self):
         """Reads a sidecar index if present; otherwise scans the binary to build one."""
@@ -373,11 +372,10 @@ def fill_one_solution_for_cache(target: str):
                 RANDOM_SOLUTION_CACHE[target].append(solution)
 
     except Exception as e:
-        app.logger.error(f"Error filling cache for target {target}: {e}", exc_info=True)
+        app.logger.error(f"Error filling cache for target {target}: {e}", exc_info=False) # Set exc_info to False for this error
 
 def start_background_caching(target: str):
     """Starts a background thread to cache one solution."""
-    app.logger.info(f"Starting background cache fill for target: {target}")
     thread = threading.Thread(target=fill_one_solution_for_cache, args=(target,))
     thread.daemon = True
     thread.start()
@@ -625,7 +623,6 @@ def health_check():
 
 if __name__ == '__main__':
     app.logger.info("Starting application...")
-    # Pre-populate the cache for all available targets
     app.logger.info("Starting to pre-populate random solution cache in the background...")
     available_targets = []
     for t in TARGETS:
