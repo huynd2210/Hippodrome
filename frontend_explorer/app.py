@@ -54,9 +54,9 @@ TARGET_BIN_MAP = {
 }
 TARGET_DB_MAP = {
     'top-row': 'hippodrome_top_row.db',
-    'first-column': 'hippodrome_first_column.db',
-    'last-column': 'hippodrome_last_column.db',
-    'corners': 'hippodrome_corners.db',
+        'first-column': 'hippodrome_first_column.db',
+        'last-column': 'hippodrome_last_column.db',
+        'corners': 'hippodrome_corners.db',
     'center': 'hippodrome_center.db',
 }
 
@@ -136,8 +136,16 @@ def reconstruct_states(initial_board: str, moves_bytes: bytes) -> List[str]:
     states = [initial_board]
     current = initial_board
     for mv in unpack_moves_from_bytes(moves_bytes):
-        current = apply_move(current, mv)
-        states.append(current)
+        try:
+            from_pos, to_pos = mv
+            # Defensive bounds check to avoid IndexError on corrupted data
+            if not (0 <= from_pos < 16 and 0 <= to_pos < 16):
+                continue
+            current = apply_move(current, (from_pos, to_pos))
+            states.append(current)
+        except IndexError:
+            # Stop reconstruction on invalid move to avoid server error
+            break
     return states
 
 class BinTargetIndex:
@@ -226,6 +234,9 @@ class BinTargetIndex:
     def _read_entry(self, idx: int):
         """Reads a single solution entry from the binary file by its index."""
         f = self.file
+        # Defensive: guard against race on idx during initial warmup
+        if idx < 0 or idx >= len(self.entries):
+            raise IndexError('entry index out of range')
         meta = self.entries[idx]
         f.seek(meta['offset'])
         sid = struct.unpack('<I', f.read(4))[0]
@@ -238,12 +249,23 @@ class BinTargetIndex:
         """Retrieves a solution by its configuration ID."""
         self.open()
         idx = self.id_to_idx.get(sid)
-        return None if idx is None else self._read_entry(idx)
+        if idx is None:
+            return None
+        try:
+            return self._read_entry(idx)
+        except IndexError:
+            return None
 
     def get_random(self):
         """Retrieves a random solution."""
         self.open()
-        return self._read_entry(random.randrange(self.count))
+        if self.count <= 0:
+            raise IndexError('no entries in index')
+        try:
+            return self._read_entry(random.randrange(self.count))
+        except IndexError:
+            # Retry once on transient out-of-range
+            return self._read_entry(0)
 
     def get_stats(self):
         """Returns statistics about the solutions in the binary file."""
@@ -294,9 +316,9 @@ def get_target_db_connection(target_name: str):
     """Returns a connection to the SQLite database for a given target."""
     db_file = TARGET_DB_MAP.get(target_name, f"hippodrome_{target_name.replace('-', '_')}.db")
     if os.path.exists(db_file):
-        conn = sqlite3.connect(db_file)
-        conn.row_factory = sqlite3.Row
-        return conn
+    conn = sqlite3.connect(db_file)
+    conn.row_factory = sqlite3.Row
+    return conn
     # remote
     url = DB_URLS.get(target_name, '')
     if not url:
@@ -340,7 +362,7 @@ def get_targets():
             if not (local or remote):
                 continue
         targets.append({'name': t, 'positions': ','.join(map(str, TARGET_POSITIONS.get(t, []))), 'description': t})
-    return jsonify(targets)
+        return jsonify(targets)
 
 @app.route('/api/solution/<int:config_id>')
 def get_solution(config_id):
@@ -355,15 +377,17 @@ def get_solution(config_id):
             sid, bitboards, moves_bytes = data
             initial_board = board_from_bitboards(bitboards)
             states = reconstruct_states(initial_board, moves_bytes)
+            if not states or states[0] != initial_board:
+                return jsonify({'error': 'Corrupted solution data'}), 500
             return jsonify({'id': sid, 'initial_board': initial_board, 'solution_path': states, 'moves': len(states) - 1, 'time_ms': 0.0, 'target': target})
         else:
-            conn = get_target_db_connection(target)
+        conn = get_target_db_connection(target)
             cur = conn.cursor()
             cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions WHERE id = ?', (config_id,))
             row = cur.fetchone()
-            conn.close()
-            if not row:
-                return jsonify({'error': f'Solution not found for config {config_id} with target {target}'}), 404
+        conn.close()
+        if not row:
+            return jsonify({'error': f'Solution not found for config {config_id} with target {target}'}), 404
             return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -371,22 +395,24 @@ def get_solution(config_id):
 @app.route('/api/random')
 def get_random_solution():
     """Returns a random solution."""
-    target = request.args.get('target', 'top-row')
+    target = request.args.get('target', 'top-row') 
     try:
         if HIPPO_SOURCE == 'bin':
             idx = get_bin_index(target)
             sid, bitboards, moves_bytes = idx.get_random()
             initial_board = board_from_bitboards(bitboards)
             states = reconstruct_states(initial_board, moves_bytes)
+            if not states or states[0] != initial_board:
+                return jsonify({'error': 'Corrupted solution data'}), 500
             return jsonify({'id': sid, 'initial_board': initial_board, 'solution_path': states, 'moves': len(states) - 1, 'time_ms': 0.0, 'target': target})
         else:
-            conn = get_target_db_connection(target)
+        conn = get_target_db_connection(target)
             cur = conn.cursor()
             cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions ORDER BY RANDOM() LIMIT 1')
             row = cur.fetchone()
-            conn.close()
-            if not row:
-                return jsonify({'error': f'No solutions found for target {target}'}), 404
+        conn.close()
+        if not row:
+            return jsonify({'error': f'No solutions found for target {target}'}), 404
             return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -413,22 +439,22 @@ def search_solutions():
                     break
             return jsonify(results)
         else:
-            conn = get_target_db_connection(target)
+        conn = get_target_db_connection(target)
             cur = conn.cursor()
-            query = 'SELECT id, initial_board, moves, time_ms FROM solutions WHERE 1=1'
-            params = []
-            if min_moves is not None:
-                query += ' AND moves >= ?'
-                params.append(min_moves)
-            if max_moves is not None:
-                query += ' AND moves <= ?'
-                params.append(max_moves)
-            query += ' ORDER BY moves ASC LIMIT ?'
-            params.append(limit)
+        query = 'SELECT id, initial_board, moves, time_ms FROM solutions WHERE 1=1'
+        params = []
+        if min_moves is not None:
+            query += ' AND moves >= ?'
+            params.append(min_moves)
+        if max_moves is not None:
+            query += ' AND moves <= ?'
+            params.append(max_moves)
+        query += ' ORDER BY moves ASC LIMIT ?'
+        params.append(limit)
             cur.execute(query, params)
             results = [dict(row) for row in cur.fetchall()]
-            conn.close()
-            return jsonify(results)
+        conn.close()
+        return jsonify(results)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -442,7 +468,7 @@ def get_statistics():
             s = idx.get_stats()
             return jsonify({'target': target, 'total_solutions': s['total_solutions'], 'avg_moves': s['avg_moves'], 'min_moves': s['min_moves'], 'max_moves': s['max_moves'], 'avg_time_ms': 0.0, 'move_distribution': []})
         else:
-            conn = get_target_db_connection(target)
+        conn = get_target_db_connection(target)
             cur = conn.cursor()
             cur.execute('SELECT COUNT(*) as total FROM solutions')
             total = cur.fetchone()[0]
@@ -450,7 +476,7 @@ def get_statistics():
             avg_moves, min_moves, max_moves = cur.fetchone()
             cur.execute('SELECT AVG(time_ms) FROM solutions')
             avg_time = cur.fetchone()[0]
-            conn.close()
+        conn.close()
             return jsonify({'target': target, 'total_solutions': total, 'avg_moves': round(avg_moves, 2), 'min_moves': min_moves, 'max_moves': max_moves, 'avg_time_ms': round(avg_time, 2), 'move_distribution': []})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -471,15 +497,17 @@ def search_by_board():
             sid, bitboards, moves_bytes = data
             initial_board = board_from_bitboards(bitboards)
             states = reconstruct_states(initial_board, moves_bytes)
+            if not states or states[0] != initial_board:
+                return jsonify({'error': 'Corrupted solution data'}), 500
             return jsonify({'id': sid, 'initial_board': initial_board, 'solution_path': states, 'moves': len(states) - 1, 'time_ms': 0.0, 'target': target})
         else:
-            conn = get_target_db_connection(target)
+        conn = get_target_db_connection(target)
             cur = conn.cursor()
             cur.execute('SELECT id, initial_board, solution_path, moves, time_ms FROM solutions WHERE initial_board = ?', (board_state,))
             row = cur.fetchone()
-            conn.close()
-            if not row:
-                return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
+        conn.close()
+        if not row:
+            return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
             return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
