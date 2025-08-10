@@ -19,12 +19,22 @@ import urllib.request
 import tempfile
 import hashlib
 import threading
+import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
 # Initialize the Flask application
 app = Flask(__name__)
 CORS(app)
+
+# --- Logging Configuration ---
+# Configure logging to output to the console
+app.logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+app.logger.addHandler(handler)
+# --- End Logging Configuration ---
 
 # Determine the backend data source from environment variables (default to 'bin')
 HIPPO_SOURCE = os.environ.get('HIPPO_SOURCE', 'bin').lower()
@@ -90,11 +100,14 @@ def download_to_cache(url: str, key_hint: str) -> Optional[str]:
     h = hashlib.md5(url.encode()).hexdigest()
     path = CACHE_DIR / f"{key_hint}_{h}"
     if path.exists():
+        app.logger.info(f"Cache hit for downloaded file: {key_hint}")
         return str(path)
     try:
+        app.logger.info(f"Downloading {url} to cache...")
         urllib.request.urlretrieve(url, path)
         return str(path)
-    except Exception:
+    except Exception as e:
+        app.logger.error(f"Failed to download {url}: {e}", exc_info=True)
         return None
 
 
@@ -182,18 +195,21 @@ class BinTargetIndex:
         if self.file is None:
             with self._lock:
                 if self.file is None:
+                    app.logger.info(f"Opening and building index for {self.target}...")
                     self.file = open(self.path, 'rb')
                     self._build_index()
+                    app.logger.info(f"Index for {self.target} built. Solutions: {self.count}")
                     # After building index from scan, persist sidecar for faster startups
                     try:
                         self._persist_index()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        app.logger.error(f"Failed to persist index for {self.target}: {e}", exc_info=True)
 
     def _build_index(self):
         """Reads a sidecar index if present; otherwise scans the binary to build one."""
         idx_path = self.path + '.idx'
         if os.path.exists(idx_path):
+            app.logger.info(f"Building index for {self.target} from .idx file.")
             with open(idx_path, 'rb') as idx:
                 sig = idx.read(4)
                 if sig != b'HIPX':
@@ -214,7 +230,8 @@ class BinTargetIndex:
                     self.max_moves = mcount if self.max_moves is None else max(self.max_moves, mcount)
                     self.sum_moves += mcount
             return
-        # Fallback: scan the binary file
+        
+        app.logger.warning(f"No .idx file for {self.target}, building from .bin scan. This may be slow.")
         f = self.file
         f.seek(0)
         magic = f.read(4)
@@ -238,7 +255,6 @@ class BinTargetIndex:
     def _read_entry(self, idx: int):
         """Reads a single solution entry from the binary file by its index."""
         f = self.file
-        # Defensive: guard against race on idx during initial warmup
         if idx < 0 or idx >= len(self.entries):
             raise IndexError('entry index out of range')
         meta = self.entries[idx]
@@ -272,7 +288,6 @@ class BinTargetIndex:
             with self._lock:
                 return self._read_entry(rand_idx)
         except IndexError:
-            # Retry once on transient out-of-range
             with self._lock:
                 return self._read_entry(0)
 
@@ -286,8 +301,9 @@ class BinTargetIndex:
         """Finds a solution by its initial board state."""
         self.open()
         found_idx = -1
+        search_board = board_state.strip()
         for i, meta in enumerate(self.entries):
-            if meta['initial_board'] == board_state:
+            if meta['initial_board'].strip() == search_board:
                 found_idx = i
                 break
         
@@ -299,18 +315,17 @@ class BinTargetIndex:
     def _persist_index(self):
         """Writes a compact sidecar index (.idx) next to the binary for fast reloads."""
         idx_path = self.path + '.idx'
-        # Do not overwrite if already present
         if os.path.exists(idx_path):
             return
+        app.logger.info(f"Persisting new index to {idx_path}")
         with open(idx_path, 'wb') as idx:
-            idx.write(b'HIPX')               # signature
+            idx.write(b'HIPX')
             idx.write(struct.pack('<B', self.version))
             idx.write(struct.pack('<I', self.count))
             for meta in self.entries:
                 idx.write(struct.pack('<I', meta['id']))
                 idx.write(struct.pack('<Q', meta['offset']))
                 idx.write(struct.pack('<H', meta['moves_count']))
-                # Store initial board as 16 bytes ASCII
                 initial = meta['initial_board'].encode('ascii')[:16]
                 if len(initial) < 16:
                     initial += b' ' * (16 - len(initial))
@@ -339,8 +354,7 @@ def fill_one_solution_for_cache(target: str):
             initial_board = board_from_bitboards(bitboards)
             states = reconstruct_states(initial_board, moves_bytes)
             if not states or states[0] != initial_board:
-                return  # Skip corrupted data
-
+                return
             solution = {'id': sid, 'initial_board': initial_board, 'solution_path': states, 'moves': len(states) - 1, 'time_ms': 0.0, 'target': target}
         else: # db
             conn = get_target_db_connection(target)
@@ -359,10 +373,11 @@ def fill_one_solution_for_cache(target: str):
                 RANDOM_SOLUTION_CACHE[target].append(solution)
 
     except Exception as e:
-        print(f"Error filling cache for target {target}: {e}")
+        app.logger.error(f"Error filling cache for target {target}: {e}", exc_info=True)
 
 def start_background_caching(target: str):
     """Starts a background thread to cache one solution."""
+    app.logger.info(f"Starting background cache fill for target: {target}")
     thread = threading.Thread(target=fill_one_solution_for_cache, args=(target,))
     thread.daemon = True
     thread.start()
@@ -376,7 +391,6 @@ def get_target_db_connection(target_name: str):
         conn = sqlite3.connect(db_file)
         conn.row_factory = sqlite3.Row
         return conn
-    # remote
     url = DB_URLS.get(target_name, '')
     if not url:
         raise FileNotFoundError(f"Target database not found: {db_file}")
@@ -405,6 +419,7 @@ def index():
 @app.route('/api/targets')
 def get_targets():
     """Returns a list of available targets."""
+    app.logger.info("Request received for /api/targets")
     targets = []
     for t in TARGETS:
         try:
@@ -421,13 +436,14 @@ def get_targets():
                     continue
             targets.append({'name': t, 'positions': ','.join(map(str, TARGET_POSITIONS.get(t, []))), 'description': t})
         except KeyError:
-            continue # Skip targets not in map
+            continue
     return jsonify(targets)
 
 @app.route('/api/solution/<int:config_id>')
 def get_solution(config_id):
     """Returns a specific solution by its configuration ID."""
     target = request.args.get('target', 'top-row')
+    app.logger.info(f"Request for solution by ID: {config_id}, target: {target}")
     try:
         if HIPPO_SOURCE == 'bin':
             idx = get_bin_index(target)
@@ -450,23 +466,23 @@ def get_solution(config_id):
                 return jsonify({'error': f'Solution not found for config {config_id} with target {target}'}), 404
             return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
+        app.logger.error(f"Error in get_solution(id={config_id}, target={target}): {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/random')
 def get_random_solution():
     """Returns a random solution, using a cache."""
     target = request.args.get('target', 'top-row')
-
+    app.logger.info(f"Request for random solution for target: {target}")
     with CACHE_LOCK:
         if target in RANDOM_SOLUTION_CACHE and RANDOM_SOLUTION_CACHE[target]:
+            app.logger.info(f"Cache hit for target: {target}")
             solution = RANDOM_SOLUTION_CACHE[target].pop(0)
-            start_background_caching(target)  # Refill the cache
+            start_background_caching(target)
             return jsonify(solution)
 
-    # Cache miss: generate synchronously and trigger background caching
     try:
-        print(f"Cache miss for target '{target}'. Generating synchronously and starting cache fill.")
-        # Immediately start filling the cache for future requests
+        app.logger.warning(f"Cache miss for target: {target}. Generating synchronously.")
         for _ in range(CACHE_SIZE):
             start_background_caching(target)
 
@@ -488,8 +504,8 @@ def get_random_solution():
                 return jsonify({'error': f'No solutions found for target {target}'}), 404
             return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
+        app.logger.error(f"Error in get_random_solution(target={target}): {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/api/search')
 def search_solutions():
@@ -498,6 +514,7 @@ def search_solutions():
     min_moves = request.args.get('min_moves', type=int)
     max_moves = request.args.get('max_moves', type=int)
     limit = min(request.args.get('limit', 10, type=int), 100)
+    app.logger.info(f"Request for search with target: {target}, min_moves: {min_moves}, max_moves: {max_moves}")
     try:
         if HIPPO_SOURCE == 'bin':
             idx = get_bin_index(target)
@@ -530,12 +547,14 @@ def search_solutions():
             conn.close()
             return jsonify(results)
     except Exception as e:
+        app.logger.error(f"Error in search_solutions: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/stats')
 def get_statistics():
     """Returns statistics about the solutions for a given target."""
     target = request.args.get('target', 'top-row')
+    app.logger.info(f"Request for stats for target: {target}")
     try:
         if HIPPO_SOURCE == 'bin':
             idx = get_bin_index(target)
@@ -553,6 +572,7 @@ def get_statistics():
             conn.close()
             return jsonify({'target': target, 'total_solutions': total, 'avg_moves': round(avg_moves, 2), 'min_moves': min_moves, 'max_moves': max_moves, 'avg_time_ms': round(avg_time, 2), 'move_distribution': []})
     except Exception as e:
+        app.logger.error(f"Error in get_statistics(target={target}): {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/search_by_board')
@@ -560,13 +580,16 @@ def search_by_board():
     """Searches for a solution by its initial board state."""
     board_state = request.args.get('board', '')
     target = request.args.get('target', 'top-row')
+    app.logger.info(f"Request to search by board with target: {target}")
     if len(board_state) != 16:
+        app.logger.warning(f"Invalid board state length: {len(board_state)}")
         return jsonify({'error': 'Board state must be exactly 16 characters'}), 400
     try:
         if HIPPO_SOURCE == 'bin':
             idx = get_bin_index(target)
             data = idx.find_by_board(board_state)
             if not data:
+                app.logger.warning(f"No solution found for board '{board_state}' with target '{target}'")
                 return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
             sid, bitboards, moves_bytes = data
             initial_board = board_from_bitboards(bitboards)
@@ -581,14 +604,17 @@ def search_by_board():
             row = cur.fetchone()
             conn.close()
             if not row:
+                app.logger.warning(f"No solution found for board '{board_state}' with target '{target}' in DB")
                 return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
             return jsonify({'id': row['id'], 'initial_board': row['initial_board'], 'solution_path': parse_solution_path(row['solution_path']), 'moves': row['moves'], 'time_ms': row['time_ms'], 'target': target})
     except Exception as e:
+        app.logger.error(f"Error in search_by_board: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/health')
 def health_check():
     """A health check endpoint to verify that the application is running and has data."""
+    app.logger.info("Health check requested.")
     if HIPPO_SOURCE == 'bin':
         available = any((BIN_DIR / TARGET_BIN_MAP[t]).exists() or BIN_URLS.get(t, '') for t in TARGETS)
         return jsonify({'status': 'ready' if available else 'missing-binaries'})
@@ -598,8 +624,9 @@ def health_check():
 
 
 if __name__ == '__main__':
+    app.logger.info("Starting application...")
     # Pre-populate the cache for all available targets
-    print("Starting to pre-populate random solution cache in the background...")
+    app.logger.info("Starting to pre-populate random solution cache in the background...")
     available_targets = []
     for t in TARGETS:
         try:
@@ -615,8 +642,8 @@ if __name__ == '__main__':
     for target in available_targets:
         for _ in range(CACHE_SIZE):
             start_background_caching(target)
-    print("Cache pre-population threads started.")
+    app.logger.info("Cache pre-population threads started.")
 
-    print(f"🎯 Hippodrome Explorer (Unified, source={HIPPO_SOURCE}) starting...")
     port = int(os.environ.get('PORT', 5000))
+    app.logger.info(f"Starting Flask server on port {port} with source='{HIPPO_SOURCE}'")
     app.run(debug=False, host='0.0.0.0', port=port)
