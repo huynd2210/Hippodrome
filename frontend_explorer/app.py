@@ -172,9 +172,37 @@ class BinTargetIndex:
         if self.file is None:
             self.file = open(self.path, 'rb')
             self._build_index()
+            # After building index from scan, persist sidecar for faster startups
+            try:
+                self._persist_index()
+            except Exception:
+                pass
 
     def _build_index(self):
-        """Reads the binary file and builds an index of all solution entries."""
+        """Reads a sidecar index if present; otherwise scans the binary to build one."""
+        idx_path = self.path + '.idx'
+        if os.path.exists(idx_path):
+            with open(idx_path, 'rb') as idx:
+                sig = idx.read(4)
+                if sig != b'HIPX':
+                    raise ValueError('Invalid index signature')
+                ver = struct.unpack('<B', idx.read(1))[0]
+                cnt = struct.unpack('<I', idx.read(4))[0]
+                self.version = ver
+                self.count = cnt
+                for i in range(cnt):
+                    sid = struct.unpack('<I', idx.read(4))[0]
+                    offset = struct.unpack('<Q', idx.read(8))[0]
+                    mcount = struct.unpack('<H', idx.read(2))[0]
+                    initial_bytes = idx.read(16)
+                    initial = initial_bytes.decode('ascii')
+                    self.entries.append({'id': sid, 'offset': offset, 'initial_board': initial, 'moves_count': mcount})
+                    self.id_to_idx[sid] = i
+                    self.min_moves = mcount if self.min_moves is None else min(self.min_moves, mcount)
+                    self.max_moves = mcount if self.max_moves is None else max(self.max_moves, mcount)
+                    self.sum_moves += mcount
+            return
+        # Fallback: scan the binary file
         f = self.file
         f.seek(0)
         magic = f.read(4)
@@ -230,6 +258,26 @@ class BinTargetIndex:
             if meta['initial_board'] == board_state:
                 return self._read_entry(i)
         return None
+
+    def _persist_index(self):
+        """Writes a compact sidecar index (.idx) next to the binary for fast reloads."""
+        idx_path = self.path + '.idx'
+        # Do not overwrite if already present
+        if os.path.exists(idx_path):
+            return
+        with open(idx_path, 'wb') as idx:
+            idx.write(b'HIPX')               # signature
+            idx.write(struct.pack('<B', self.version))
+            idx.write(struct.pack('<I', self.count))
+            for meta in self.entries:
+                idx.write(struct.pack('<I', meta['id']))
+                idx.write(struct.pack('<Q', meta['offset']))
+                idx.write(struct.pack('<H', meta['moves_count']))
+                # Store initial board as 16 bytes ASCII
+                initial = meta['initial_board'].encode('ascii')[:16]
+                if len(initial) < 16:
+                    initial += b' ' * (16 - len(initial))
+                idx.write(initial)
 
 _BIN_INDICES: Dict[str, BinTargetIndex] = {}
 
@@ -417,7 +465,7 @@ def search_by_board():
     try:
         if HIPPO_SOURCE == 'bin':
             idx = get_bin_index(target)
-            data = idx.find__by_board(board_state)
+            data = idx.find_by_board(board_state)
             if not data:
                 return jsonify({'error': f'No solution found for this board configuration with target {target}'}), 404
             sid, bitboards, moves_bytes = data
