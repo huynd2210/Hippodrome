@@ -11,6 +11,8 @@ The Hippodrome puzzle features:
 - Goal: Move all 4 knights to specific target positions
 - Knights move in standard chess L-shapes, other pieces slide to adjacent squares
 
+Note: In the original puzzle, there are both kings and queens, but in this repo, only kings are present. This is because in Hippodrome, there are no captures, and there is only 1 available empty spot on the board at all times. Therefore we consider kings as queens when solving, this reduces the amount of possible configurations.
+
 ## Quick Start
 
 ### 1. **Compile the Solver**
