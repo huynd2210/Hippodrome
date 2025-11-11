@@ -89,7 +89,6 @@ Each puzzle configuration is encoded as follow to minimize space:
 ### Requirements
 - C++17 compatible compiler (g++, clang++)
 - Python 3.7+
-- SQLite3 (optional, for legacy database mode)
 
 ### Compilation Options
 ```bash
