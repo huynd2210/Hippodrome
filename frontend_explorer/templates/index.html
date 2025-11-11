@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎯 Hippodrome Solution Explorer</title>
+    <title>Hippodrome Solution Explorer</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
         <!-- Header Section -->
         <header class="header">
-            <h1>🎯 Hippodrome Solution Explorer</h1>
+            <h1>Hippodrome Solution Explorer</h1>
             <p class="subtitle">Complete Database of 415,801 Puzzle Solutions</p>
         </header>
 
@@ -20,7 +20,7 @@
             <div class="control-panel">
                 <!-- Solution Search Section -->
                 <div class="search-section">
-                    <h3>🔍 Explore Solutions</h3>
+                    <h3>Explore Solutions</h3>
                     
                     <!-- Target Selection Dropdown -->
                     <div class="input-group">
@@ -38,16 +38,16 @@
                             <button id="search-btn">Search</button>
                         </div>
                         <div class="button-group">
-                            <button id="random-btn" class="btn-primary">🎲 Random Puzzle</button>
+                            <button id="random-btn" class="btn-primary">Random Puzzle</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Board Editor Section -->
                 <div class="editor-section">
-                    <h3>✏️ Board Editor</h3>
+                    <h3>Board Editor</h3>
                     <div class="editor-controls">
-                        <button id="edit-mode-btn" class="btn-secondary">📝 Edit Board</button>
+                        <button id="edit-mode-btn" class="btn-secondary">Edit Board</button>
                         
                         <!-- Piece Palette for Editor Mode -->
                         <div id="piece-palette" class="piece-palette hidden">
@@ -65,13 +65,13 @@
                                 <button class="piece-btn" data-piece="N">
                                     <img src="https://lichess1.org/assets/piece/cburnett/wN.svg" class="piece-icon"> Knight
                                 </button>
-                                <button class="piece-btn" data-piece="x">❌ Empty</button>
+                                <button class="piece-btn" data-piece="x">Empty</button>
                             </div>
                             
                             <div class="editor-actions">
-                                <button id="clear-board-btn" class="btn-warning">🧹 Clear Board</button>
-                                <button id="search-board-btn" class="btn-success">🔍 Search This Board</button>
-                                <button id="exit-edit-btn" class="btn-secondary">👁️ View Mode</button>
+                                <button id="clear-board-btn" class="btn-warning">Clear Board</button>
+                                <button id="search-board-btn" class="btn-success">Search This Board</button>
+                                <button id="exit-edit-btn" class="btn-secondary">View Mode</button>
                             </div>
                         </div>
                     </div>
@@ -79,7 +79,7 @@
 
                 <!-- Playback Controls Section -->
                 <div id="playback-section" class="playback-section">
-                    <h3>🎮 Solution Playback</h3>
+                    <h3>Solution Playback</h3>
                     <div class="solution-controls">
                         <div class="playback-controls">
                             <button id="first-btn" title="First Step">⏪</button>
@@ -109,7 +109,7 @@
 
                 <!-- Current Solution Information -->
                 <div class="solution-info">
-                    <h3>📊 Current Solution</h3>
+                    <h3>Current Solution</h3>
                     <div class="info-grid">
                         <div class="info-item">
                             <span class="label">ID:</span>
@@ -128,7 +128,7 @@
 
                 <!-- Database Statistics Panel -->
                 <div class="stats-panel">
-                    <h3>📈 Database Statistics</h3>
+                    <h3>Database Statistics</h3>
                     <div id="stats-content">
                         <p>Loading statistics...</p>
                     </div>

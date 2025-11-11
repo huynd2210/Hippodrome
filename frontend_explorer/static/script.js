@@ -604,8 +604,8 @@ class HippodromeExplorer {
     enterEditMode() {
         this.editMode = true;
         this.piecePalette.classList.remove('hidden');
-        this.editModeBtn.textContent = '👁️ View Mode';
-        this.boardModeText.textContent = '✏️ Edit Mode - Click squares to place pieces';
+        this.editModeBtn.textContent = 'View Mode';
+        this.boardModeText.textContent = 'Edit Mode - Click squares to place pieces';
         this.stopPlayback();
         
         // Initialize with the current board state or an empty board
@@ -624,8 +624,8 @@ class HippodromeExplorer {
     exitEditMode() {
         this.editMode = false;
         this.piecePalette.classList.add('hidden');
-        this.editModeBtn.textContent = '📝 Edit Board';
-        this.boardModeText.textContent = '📋 Solution View';
+        this.editModeBtn.textContent = 'Edit Board';
+        this.boardModeText.textContent = 'Solution View';
         
         // Restore the solution display
         if (this.currentSolution) {
