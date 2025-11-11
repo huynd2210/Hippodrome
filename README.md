@@ -21,14 +21,14 @@ make
 
 ### 2. **Start the Web Explorer**
 ```bash
-cd frontend_explorer
 pip install -r requirements.txt
+cd frontend_explorer
 
 # Start the web server (uses compact binary files by default)
 python app.py
 ```
 
-Open http://localhost:5000 in your browser! 🎉
+Open http://localhost:5000 in your browser!
 
 **Note:** The frontend now uses compact binary files (~14-19MB each) instead of large SQLite databases (~130MB each) for much faster loading and deployment.
 
@@ -99,7 +99,7 @@ The solver now uses a compact binary format for efficient storage and loading:
 - Solution statistics and distribution
 - **New**: Direct binary file loading (faster startup)
 
-## 🛠️ Building from Source
+## Building from Source
 
 ### Requirements
 - C++17 compatible compiler (g++, clang++)

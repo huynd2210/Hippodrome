@@ -171,7 +171,7 @@ def create_db_for_target(bin_path: str, target_name: str) -> str:
     cur.execute('INSERT INTO metadata (key, value) VALUES (?, ?)', ('total_solutions', str(total)))
     conn.commit()
     conn.close()
-    print(f"✅ Created {db_path} ({total:,} records)")
+    print(f"Created {db_path} ({total:,} records)")
     return db_path
 
 
@@ -205,19 +205,19 @@ def create_targets_index(db_files: List[str]):
         tconn.close()
     conn.commit()
     conn.close()
-    print(f"✅ Created targets index: {index_path}")
+    print(f"Created targets index: {index_path}")
 
 
 def main():
     """Main function to find binary files and create databases."""
     if not os.path.isdir(BIN_DIR):
-        print(f"❌ Directory not found: {BIN_DIR}")
+        print(f"Directory not found: {BIN_DIR}")
         return 1
     bin_files = [os.path.join(BIN_DIR, f) for f in os.listdir(BIN_DIR) if f.endswith('.bin')]
     if not bin_files:
-        print(f"❌ No .bin files found in {BIN_DIR}")
+        print(f"No .bin files found in {BIN_DIR}")
         return 1
-    print(f"📦 Found {len(bin_files)} binary files:")
+    print(f"Found {len(bin_files)} binary files:")
     for bf in bin_files:
         print(f"  • {os.path.basename(bf)} -> {parse_bin_path_to_target(bf)}")
 
@@ -227,18 +227,18 @@ def main():
     for bf in bin_files:
         base = os.path.basename(bf).lower()
         if base.startswith('sample_'):
-            print(f"⏭️  Skipping sample binary: {base}")
+            print(f"Skipping sample binary: {base}")
             continue
         target = parse_bin_path_to_target(bf)
         if target in processed_targets:
-            print(f"⏭️  Skipping duplicate target '{target}' from {base}")
+            print(f"Skipping duplicate target '{target}' from {base}")
             continue
         db = create_db_for_target(bf, target)
         created.append(db)
         processed_targets.add(target)
 
     create_targets_index(created)
-    print("🚀 Databases ready from binary inputs")
+    print("Databases ready from binary inputs")
     return 0
 
 if __name__ == '__main__':

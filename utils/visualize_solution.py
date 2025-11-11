@@ -93,7 +93,7 @@ def visualize_solution(config_id: int, initial_board: str, solution_path: str,
         
         # Check if the goal state has been reached
         if board_state.startswith("NNNN"):
-            print("\n🎉 GOAL ACHIEVED! All knights are in the top row!")
+            print("\nGOAL ACHIEVED! All knights are in the top row!")
         
         # In interactive mode, wait for the user to proceed
         if interactive and i < total_steps - 1:
@@ -107,7 +107,7 @@ def visualize_solution(config_id: int, initial_board: str, solution_path: str,
         elif not interactive and i < total_steps - 1:
             time.sleep(0.5)  # Delay for auto-play mode
     
-    print(f"\n✅ Solution complete! Solved in {moves} moves.")
+    print(f"\nSolution complete! Solved in {moves} moves.")
 
 def load_and_visualize_solutions(csv_file: str, config_id: Optional[int] = None) -> None:
     """
@@ -162,7 +162,7 @@ def load_and_visualize_solutions(csv_file: str, config_id: Optional[int] = None)
 
 def main():
     """Main function to run the visualizer."""
-    print("🏇 Hippodrome Solution Visualizer 🏇")
+    print("Hippodrome Solution Visualizer")
     print("=" * 40)
     
     # Default CSV file path
