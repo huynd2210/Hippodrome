@@ -1,8 +1,8 @@
-# Hippodrome Solver 🏇♟️
+# Hippodrome Solver
 
 A high-performance puzzle solver for the **Hippodrome puzzle** - a chess-based puzzle where knights must be moved to reach specific target positions on a 4x4 board containing various chess pieces as obstacles.
 
-## 🧩 The Puzzle
+## The Puzzle
 
 The Hippodrome puzzle features:
 - A 4x4 board with 4 knights (N) and various obstacle pieces (Kings K, Rooks R, Bishops B)
@@ -10,7 +10,7 @@ The Hippodrome puzzle features:
 - Goal: Move all 4 knights to specific target positions
 - Knights move in standard chess L-shapes, other pieces slide to adjacent squares
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. **Compile the Solver**
 ```bash
@@ -32,7 +32,7 @@ Open http://localhost:5000 in your browser! 🎉
 
 **Note:** The frontend now uses compact binary files (~14-19MB each) instead of large SQLite databases (~130MB each) for much faster loading and deployment.
 
-## 💻 Usage Examples
+## Usage Examples
 
 ### **Solver Command Line**
 ```bash
@@ -70,7 +70,7 @@ Open http://localhost:5000 in your browser! 🎉
 12 13 14 15
 ```
 
-## 🔧 Technical Details
+## Technical Details
 
 ### Algorithm
 - **A* Search**: Optimal pathfinding with admissible heuristic
@@ -119,7 +119,7 @@ make          # Standard build
 make clean    # Clean build artifacts
 ```
 
-## 🌐 Cloud Deployment
+## Cloud Deployment
 
 The application is designed for easy cloud deployment with compact binary files:
 
@@ -150,7 +150,7 @@ If you prefer the legacy SQLite approach:
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 hippodrome-solver-github/
@@ -173,7 +173,7 @@ hippodrome-solver-github/
 └── requirements.txt                 # Python dependencies
 ```
 
-## 🎯 Target Configurations
+## Target Configurations
 
 The web interface supports all major targets:
 
@@ -183,7 +183,7 @@ The web interface supports all major targets:
 - **`center`**: Knights must reach center squares (5,6,9,10)
 - **`corners`**: Knights must reach corner squares (0,3,12,15)
 
-## 📝 Notes
+## Notes
 
 - The solver uses lowercase 'x' to represent empty squares
 - Board states are represented as 16-character strings in row-major order
@@ -191,14 +191,10 @@ The web interface supports all major targets:
 - Solution paths are stored as semicolon-separated board states
 - Since there are only 1 available space, and no captures are allowed, this means that the queen functions identically as kings. Thus we treat queens as kings in order to reduce the total amount of board configurations down to just 415k.
 
-## 🔄 Recent Updates
+## Recent Updates
 
 - **Binary encoding**: Implemented compact binary format for 85-90% size reduction
 - **Unified frontend**: Single Flask app supporting both binary and database backends
 - **Cloud deployment**: Optimized for Render, Heroku, and other cloud platforms
 - **Performance**: Faster loading with in-memory binary indexing
 - **Cleanup**: Removed redundant files and organized utilities
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
