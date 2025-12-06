@@ -57,7 +57,9 @@ body {
     gap: 20px;
 }
 
-.search-section, .solution-info, .stats-panel {
+.search-section,
+.solution-info,
+.stats-panel {
     background: rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 20px;
@@ -65,7 +67,9 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.search-section h3, .solution-info h3, .stats-panel h3 {
+.search-section h3,
+.solution-info h3,
+.stats-panel h3 {
     color: #ffd700;
     margin-bottom: 15px;
     font-size: 1.1em;
@@ -142,14 +146,16 @@ button {
     transform: translateY(-1px);
 }
 
-#search-btn, #filter-btn {
+#search-btn,
+#filter-btn {
     background: #4CAF50;
     color: white;
     padding: 10px 20px;
     margin-top: 5px;
 }
 
-#search-btn:hover, #filter-btn:hover {
+#search-btn:hover,
+#filter-btn:hover {
     background: #45a049;
     transform: translateY(-1px);
 }
@@ -237,7 +243,10 @@ input[type="range"]::-webkit-slider-thumb:active {
     font-weight: 500;
 }
 
-#current-id, #current-moves, #current-time, #current-step {
+#current-id,
+#current-moves,
+#current-time,
+#current-step {
     color: #ffd700;
     font-weight: 600;
 }
@@ -348,11 +357,12 @@ input[type="range"]::-webkit-slider-thumb:active {
 }
 
 @keyframes goalGlow {
-    from { 
-        filter: drop-shadow(0 0 12px rgba(76, 175, 80, 0.6)) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4)); 
+    from {
+        filter: drop-shadow(0 0 12px rgba(76, 175, 80, 0.6)) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4));
     }
-    to { 
-        filter: drop-shadow(0 0 20px rgba(76, 175, 80, 1)) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4)); 
+
+    to {
+        filter: drop-shadow(0 0 20px rgba(76, 175, 80, 1)) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4));
     }
 }
 
@@ -375,22 +385,23 @@ input[type="range"]::-webkit-slider-thumb:active {
 /* Special glow effect when knight reaches target position */
 .chess-square.target-highlight.knight-on-target {
     background: linear-gradient(45deg, #4CAF50, #66BB6A) !important;
-    box-shadow: 0 0 20px rgba(76, 175, 80, 0.9), 
-                0 0 40px rgba(76, 175, 80, 0.6),
-                inset 0 0 10px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.9),
+        0 0 40px rgba(76, 175, 80, 0.6),
+        inset 0 0 10px rgba(255, 255, 255, 0.2);
     animation: knightTargetGlow 1.5s ease-in-out infinite alternate;
 }
 
 @keyframes knightTargetGlow {
-    0% { 
-        box-shadow: 0 0 20px rgba(76, 175, 80, 0.9), 
-                    0 0 40px rgba(76, 175, 80, 0.6),
-                    inset 0 0 10px rgba(255, 255, 255, 0.2);
+    0% {
+        box-shadow: 0 0 20px rgba(76, 175, 80, 0.9),
+            0 0 40px rgba(76, 175, 80, 0.6),
+            inset 0 0 10px rgba(255, 255, 255, 0.2);
     }
-    100% { 
-        box-shadow: 0 0 30px rgba(76, 175, 80, 1), 
-                    0 0 60px rgba(76, 175, 80, 0.8),
-                    inset 0 0 15px rgba(255, 255, 255, 0.3);
+
+    100% {
+        box-shadow: 0 0 30px rgba(76, 175, 80, 1),
+            0 0 60px rgba(76, 175, 80, 0.8),
+            inset 0 0 15px rgba(255, 255, 255, 0.3);
     }
 }
 
@@ -404,8 +415,15 @@ input[type="range"]::-webkit-slider-thumb:active {
 }
 
 @keyframes pulse {
-    0%, 100% { box-shadow: inset 0 0 0 4px #ffd700; }
-    50% { box-shadow: inset 0 0 0 8px rgba(255, 215, 0, 0.6); }
+
+    0%,
+    100% {
+        box-shadow: inset 0 0 0 4px #ffd700;
+    }
+
+    50% {
+        box-shadow: inset 0 0 0 8px rgba(255, 215, 0, 0.6);
+    }
 }
 
 /* Solution Controls */
@@ -662,8 +680,13 @@ input[type="range"]::-webkit-slider-thumb:active {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-overlay p {
@@ -731,7 +754,7 @@ input[type="range"]::-webkit-slider-thumb:active {
         grid-template-columns: 300px 1fr;
         gap: 20px;
     }
-    
+
     .chess-square {
         width: 80px;
         height: 80px;
@@ -744,15 +767,15 @@ input[type="range"]::-webkit-slider-thumb:active {
         grid-template-columns: 1fr;
         gap: 20px;
     }
-    
+
     .control-panel {
         order: 2;
     }
-    
+
     .game-area {
         order: 1;
     }
-    
+
     .chess-square {
         width: 70px;
         height: 70px;
@@ -764,30 +787,102 @@ input[type="range"]::-webkit-slider-thumb:active {
     .container {
         padding: 10px;
     }
-    
+
     .header h1 {
         font-size: 2em;
     }
-    
+
     .subtitle {
         font-size: 1em;
     }
-    
+
     .chess-square {
         width: 60px;
         height: 60px;
         font-size: 1.8em;
     }
-    
+
     .playback-controls button {
         width: 40px;
         height: 40px;
         font-size: 1em;
     }
-    
+
     #play-pause-btn {
         width: 50px;
         height: 50px;
         font-size: 1.3em;
     }
-} 
+}
+
+/* Rules Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal.hidden {
+    display: none !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #2a2a40, #1a1a2e);
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 600px;
+    width: 90%;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    position: relative;
+    transform: translateY(0);
+    transition: transform 0.3s ease;
+}
+
+.modal.hidden .modal-content {
+    transform: translateY(-20px);
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    color: #b0b0b0;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.close-modal:hover {
+    color: #ffd700;
+}
+
+.modal-content h2 {
+    color: #ffd700;
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+}
+
+.rules-text p {
+    margin-bottom: 15px;
+    color: #e0e0e0;
+    line-height: 1.6;
+}
+
+.rules-text strong {
+    color: #ffd700;
+}

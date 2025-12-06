@@ -14,22 +14,22 @@ class HippodromeExplorer {
         this.playbackSpeed = 1000;   // Default playback speed in milliseconds
         this.currentTarget = 'top-row'; // Default target configuration
         this.availableTargets = [];  // List of available targets
-        
+
         // --- Editor State ---
         this.editMode = false;       // Flag for board editor mode
         this.selectedPiece = 'K';    // Default piece for the editor palette
         this.editorBoardState = 'xxxxxxxxxxxxxxxx'; // Initial empty state for the editor
-        
+
         // --- Initialization ---
         this.initializeElements();
         this.bindEventListeners();
         this.initializeBoard();
-        
+
         // Load initial data in parallel for a better user experience
         this.loadTargets();
         this.loadStatistics();
         this.loadRandomSolution(); // Start with a random solution
-        
+
         // Initialize the speed display
         this.updateSpeed();
     }
@@ -40,10 +40,10 @@ class HippodromeExplorer {
     initializeElements() {
         // Board
         this.board = document.getElementById('chess-board');
-        
+
         // Target elements
         this.targetSelect = document.getElementById('target-select');
-        
+
         // Controls
         this.playPauseBtn = document.getElementById('play-pause-btn');
         this.prevBtn = document.getElementById('prev-btn');
@@ -53,12 +53,12 @@ class HippodromeExplorer {
         this.speedSlider = document.getElementById('speed-slider');
         this.speedDisplay = document.getElementById('speed-display');
         this.progressFill = document.getElementById('progress-fill');
-        
+
         // Search elements
         this.configIdInput = document.getElementById('config-id');
         this.searchBtn = document.getElementById('search-btn');
         this.randomBtn = document.getElementById('random-btn');
-        
+
         // Editor elements
         this.editModeBtn = document.getElementById('edit-mode-btn');
         this.piecePalette = document.getElementById('piece-palette');
@@ -66,7 +66,7 @@ class HippodromeExplorer {
         this.clearBoardBtn = document.getElementById('clear-board-btn');
         this.searchBoardBtn = document.getElementById('search-board-btn');
         this.exitEditBtn = document.getElementById('exit-edit-btn');
-        
+
         // UI elements
         this.currentId = document.getElementById('current-id');
         this.currentMoves = document.getElementById('current-moves');
@@ -77,6 +77,11 @@ class HippodromeExplorer {
         this.errorMessage = document.getElementById('error-message');
         this.errorText = document.getElementById('error-text');
         this.closeErrorBtn = document.getElementById('close-error');
+
+        // Rules Modal elements
+        this.rulesBtn = document.getElementById('rules-btn');
+        this.rulesModal = document.getElementById('rules-modal');
+        this.closeRulesBtn = document.querySelector('.close-modal');
     }
 
     /**
@@ -90,7 +95,7 @@ class HippodromeExplorer {
             this.loadStatistics();
             this.loadRandomSolution(); // Load a new random solution for the selected target
         });
-        
+
         // Playback controls
         this.playPauseBtn.addEventListener('click', () => this.togglePlayback());
         this.prevBtn.addEventListener('click', () => this.previousStep());
@@ -98,20 +103,20 @@ class HippodromeExplorer {
         this.firstBtn.addEventListener('click', () => this.goToStep(0));
         this.lastBtn.addEventListener('click', () => this.goToLastStep());
         this.speedSlider.addEventListener('input', () => this.updateSpeed());
-        
+
         // Search controls
         this.searchBtn.addEventListener('click', () => this.loadSolution());
         this.randomBtn.addEventListener('click', () => this.loadRandomSolution());
         this.configIdInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.loadSolution();
         });
-        
+
         // Editor controls
         this.editModeBtn.addEventListener('click', () => this.toggleEditMode());
         this.clearBoardBtn.addEventListener('click', () => this.clearBoard());
         this.searchBoardBtn.addEventListener('click', () => this.searchByBoard());
         this.exitEditBtn.addEventListener('click', () => this.exitEditMode());
-        
+
         // Piece palette
         this.pieceBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -120,9 +125,29 @@ class HippodromeExplorer {
                 this.selectedPiece = btn.dataset.piece;
             });
         });
-        
+
         // Error handling
         this.closeErrorBtn.addEventListener('click', () => this.hideError());
+
+        // Rules Modal handling
+        if (this.rulesBtn) {
+            this.rulesBtn.addEventListener('click', () => {
+                this.rulesModal.classList.remove('hidden');
+            });
+        }
+
+        if (this.closeRulesBtn) {
+            this.closeRulesBtn.addEventListener('click', () => {
+                this.rulesModal.classList.add('hidden');
+            });
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === this.rulesModal) {
+                this.rulesModal.classList.add('hidden');
+            }
+        });
     }
 
     /**
@@ -134,7 +159,7 @@ class HippodromeExplorer {
             const square = document.createElement('div');
             square.className = 'chess-square';
             square.dataset.position = i;
-            
+
             // Add alternating colors for a classic chessboard look
             const row = Math.floor(i / 4);
             const col = i % 4;
@@ -143,20 +168,17 @@ class HippodromeExplorer {
             } else {
                 square.classList.add('dark');
             }
-            
+
             // Add a click handler for the editor mode
             square.addEventListener('click', () => this.handleSquareClick(i));
-            
+
             this.board.appendChild(square);
         }
-        
+
         // Initial highlighting of target squares
         this.highlightTargetSquares();
     }
 
-    /**
-     * Loads the available targets from the API and populates the dropdown.
-     */
     async loadTargets() {
         // Define targets directly with simplified descriptions
         const targets = [
@@ -166,13 +188,13 @@ class HippodromeExplorer {
                 description: 'top-row'
             },
             {
-                name: 'first-column', 
+                name: 'first-column',
                 positions: '0,4,8,12',
                 description: 'first-column'
             },
             {
                 name: 'last-column',
-                positions: '3,7,11,15', 
+                positions: '3,7,11,15',
                 description: 'last-column'
             },
             {
@@ -186,7 +208,7 @@ class HippodromeExplorer {
                 description: 'corners'
             }
         ];
-        
+
         this.availableTargets = targets;
         this.populateTargetDropdown(targets);
     }
@@ -197,7 +219,7 @@ class HippodromeExplorer {
      */
     populateTargetDropdown(targets) {
         this.targetSelect.innerHTML = '';
-        
+
         targets.forEach(target => {
             const option = document.createElement('option');
             option.value = target.name;
@@ -217,7 +239,7 @@ class HippodromeExplorer {
         document.querySelectorAll('.chess-square').forEach(square => {
             square.classList.remove('target-highlight');
         });
-        
+
         // Add highlights for the current target
         const target = this.availableTargets.find(t => t.name === this.currentTarget);
         if (target) {
@@ -249,28 +271,28 @@ class HippodromeExplorer {
      */
     async loadSolution() {
         const configId = parseInt(this.configIdInput.value);
-        
+
         if (isNaN(configId) || configId < 0 || configId > 415800) {
             this.showError('Please enter a valid configuration ID (0-415800)');
             return;
         }
-        
+
         this.showLoading();
         this.clearSolutionDisplay();
         try {
             const response = await fetch(`/api/solution/${configId}?target=${this.currentTarget}`);
             const data = await response.json();
-            
+
             if (data.error) {
                 this.showError(data.error);
                 return;
             }
-            
+
             this.currentSolution = data;
             this.currentStep = 0;
             this.updateUI();
             this.displayBoard(data.solution_path[0]);
-            
+
         } catch (error) {
             this.showError('Failed to load solution');
             console.error('Error:', error);
@@ -288,20 +310,20 @@ class HippodromeExplorer {
         try {
             const response = await fetch(`/api/random?target=${this.currentTarget}`);
             const data = await response.json();
-            
+
             if (data.error) {
                 this.showError(data.error);
                 return;
             }
-            
+
             this.currentSolution = data;
             this.currentStep = 0;
             this.updateUI();
             this.displayBoard(data.solution_path[0]);
-            
+
             // Update the config ID input to show the ID of the random solution
             this.configIdInput.value = data.id;
-            
+
         } catch (error) {
             this.showError('Failed to load random solution');
             console.error('Error:', error);
@@ -317,12 +339,12 @@ class HippodromeExplorer {
         try {
             const response = await fetch(`/api/stats?target=${this.currentTarget}`);
             const data = await response.json();
-            
+
             if (data.error) {
                 this.statsContent.innerHTML = '<p>Error loading statistics</p>';
                 return;
             }
-            
+
             const html = `
                 <div class="stat-item">
                     <span class="stat-label">Target:</span>
@@ -345,9 +367,9 @@ class HippodromeExplorer {
                     <span class="stat-value">${data.avg_time_ms}ms</span>
                 </div>
             `;
-            
+
             this.statsContent.innerHTML = html;
-            
+
         } catch (error) {
             this.statsContent.innerHTML = '<p>Error loading statistics</p>';
             console.error('Error:', error);
@@ -360,20 +382,20 @@ class HippodromeExplorer {
      */
     displayBoard(boardState) {
         if (!boardState) return;
-        
+
         const squares = document.querySelectorAll('.chess-square');
         const target = this.availableTargets.find(t => t.name === this.currentTarget);
         const targetPositions = target ? target.positions.split(',').map(p => parseInt(p.trim())) : [];
-        
+
         for (let i = 0; i < 16; i++) {
             const square = squares[i];
             const piece = boardState[i];
-            
+
             // Clear previous content and classes
             square.innerHTML = '';
             square.className = square.className.replace(/piece-\w+/g, '');
             square.classList.remove('knight-on-target');
-            
+
             if (piece !== 'x') {
                 // Create a Lichess-style piece image for an authentic look
                 const img = document.createElement('img');
@@ -382,14 +404,14 @@ class HippodromeExplorer {
                 img.alt = piece;
                 square.appendChild(img);
                 square.classList.add(`piece-${this.getPieceType(piece)}`);
-                
+
                 // Add a special glow effect if a knight is on a target square
                 if ((piece === 'N' || piece === 'n') && targetPositions.includes(i)) {
                     square.classList.add('knight-on-target');
                 }
             }
         }
-        
+
         // Reapply target highlights
         this.highlightTargetSquares();
     }
@@ -403,7 +425,7 @@ class HippodromeExplorer {
         const baseUrl = 'https://lichess1.org/assets/piece/cburnett/';
         const pieceMap = {
             'K': 'wK.svg', 'k': 'bK.svg',
-            'Q': 'wQ.svg', 'q': 'bQ.svg', 
+            'Q': 'wQ.svg', 'q': 'bQ.svg',
             'R': 'wR.svg', 'r': 'bR.svg',
             'B': 'wB.svg', 'b': 'bB.svg',
             'N': 'wN.svg', 'n': 'bN.svg',
@@ -421,7 +443,7 @@ class HippodromeExplorer {
         const types = {
             'K': 'king', 'k': 'king',
             'Q': 'queen', 'q': 'queen',
-            'R': 'rook', 'r': 'rook', 
+            'R': 'rook', 'r': 'rook',
             'B': 'bishop', 'b': 'bishop',
             'N': 'knight', 'n': 'knight',
             'P': 'pawn', 'p': 'pawn'
@@ -449,10 +471,10 @@ class HippodromeExplorer {
         if (!this.currentSolution || this.currentStep >= this.currentSolution.solution_path.length - 1) {
             return;
         }
-        
+
         this.isPlaying = true;
         this.playPauseBtn.textContent = '⏸️';
-        
+
         this.playbackTimer = setInterval(() => {
             if (this.currentStep < this.currentSolution.solution_path.length - 1) {
                 this.nextStep();
@@ -481,7 +503,7 @@ class HippodromeExplorer {
         if (!this.currentSolution || this.currentStep >= this.currentSolution.solution_path.length - 1) {
             return;
         }
-        
+
         this.currentStep++;
         this.displayBoard(this.currentSolution.solution_path[this.currentStep]);
         this.updateProgressBar();
@@ -495,7 +517,7 @@ class HippodromeExplorer {
         if (!this.currentSolution || this.currentStep <= 0) {
             return;
         }
-        
+
         this.currentStep--;
         this.displayBoard(this.currentSolution.solution_path[this.currentStep]);
         this.updateProgressBar();
@@ -510,7 +532,7 @@ class HippodromeExplorer {
         if (!this.currentSolution || step < 0 || step >= this.currentSolution.solution_path.length) {
             return;
         }
-        
+
         this.currentStep = step;
         this.displayBoard(this.currentSolution.solution_path[this.currentStep]);
         this.updateProgressBar();
@@ -532,18 +554,18 @@ class HippodromeExplorer {
         const sliderValue = parseInt(this.speedSlider.value);
         const minValue = parseInt(this.speedSlider.min);
         const maxValue = parseInt(this.speedSlider.max);
-        
+
         // Reverse the calculation so that the right side of the slider is faster
         const actualSpeed = minValue + maxValue - sliderValue;
-        
+
         // Calculate a speed multiplier for display (e.g., 1.0x, 2.0x)
         const speedMultiplier = (1000 / actualSpeed).toFixed(1);
-        
+
         this.playbackSpeed = actualSpeed;
-        
+
         // Update the display text
         this.speedDisplay.textContent = `${(this.playbackSpeed / 1000).toFixed(2)}s (${speedMultiplier}x)`;
-        
+
         // If currently playing, restart with the new speed
         if (this.isPlaying) {
             this.stopPlayback();
@@ -556,10 +578,10 @@ class HippodromeExplorer {
      */
     updateUI() {
         if (!this.currentSolution) return;
-        
+
         this.currentId.textContent = `#${this.currentSolution.id}`;
         this.currentMoves.textContent = `${this.currentSolution.moves}`;
-        
+
         this.updateProgressBar();
         this.updateStepInfo();
     }
@@ -569,7 +591,7 @@ class HippodromeExplorer {
      */
     updateProgressBar() {
         if (!this.currentSolution) return;
-        
+
         const progress = (this.currentStep / (this.currentSolution.solution_path.length - 1)) * 100;
         this.progressFill.style.width = `${progress}%`;
     }
@@ -579,7 +601,7 @@ class HippodromeExplorer {
      */
     updateStepInfo() {
         if (!this.currentSolution) return;
-        
+
         this.currentStepDisplay.textContent = `${this.currentStep} / ${this.currentSolution.solution_path.length - 1}`;
     }
 
@@ -590,7 +612,7 @@ class HippodromeExplorer {
      */
     toggleEditMode() {
         this.editMode = !this.editMode;
-        
+
         if (this.editMode) {
             this.enterEditMode();
         } else {
@@ -607,14 +629,14 @@ class HippodromeExplorer {
         this.editModeBtn.textContent = 'View Mode';
         this.boardModeText.textContent = 'Edit Mode - Click squares to place pieces';
         this.stopPlayback();
-        
+
         // Initialize with the current board state or an empty board
         if (this.currentSolution) {
             this.editorBoardState = this.currentSolution.solution_path[this.currentStep];
         } else {
             this.editorBoardState = 'xxxxxxxxxxxxxxxx';
         }
-        
+
         this.displayBoard(this.editorBoardState);
     }
 
@@ -626,7 +648,7 @@ class HippodromeExplorer {
         this.piecePalette.classList.add('hidden');
         this.editModeBtn.textContent = 'Edit Board';
         this.boardModeText.textContent = 'Solution View';
-        
+
         // Restore the solution display
         if (this.currentSolution) {
             this.displayBoard(this.currentSolution.solution_path[this.currentStep]);
@@ -639,12 +661,12 @@ class HippodromeExplorer {
      */
     handleSquareClick(position) {
         if (!this.editMode) return;
-        
+
         // Update the board state string
         const boardArray = this.editorBoardState.split('');
         boardArray[position] = this.selectedPiece;
         this.editorBoardState = boardArray.join('');
-        
+
         // Update the display
         this.displayBoard(this.editorBoardState);
     }
@@ -665,28 +687,28 @@ class HippodromeExplorer {
             this.showError('Invalid board state');
             return;
         }
-        
+
         this.showLoading();
         this.clearSolutionDisplay();
         try {
             const response = await fetch(`/api/search_by_board?board=${this.editorBoardState}&target=${this.currentTarget}`);
             const data = await response.json();
-            
+
             if (data.error) {
                 this.showError(data.error);
                 return;
             }
-            
+
             // Exit edit mode and show the found solution
             this.exitEditMode();
             this.currentSolution = data;
             this.currentStep = 0;
             this.updateUI();
             this.displayBoard(data.solution_path[0]);
-            
+
             // Update the config ID input
             this.configIdInput.value = data.id;
-            
+
         } catch (error) {
             this.showError('Search failed');
             console.error('Error:', error);
@@ -718,7 +740,7 @@ class HippodromeExplorer {
     showError(message) {
         this.errorText.textContent = message;
         this.errorMessage.classList.remove('hidden');
-        
+
         // Automatically hide the error after 5 seconds
         setTimeout(() => {
             this.hideError();
