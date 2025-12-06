@@ -3,6 +3,9 @@ This repository contains the code and solution to every possible configuration f
 
 Interactive Demo: https://hippodrome.onrender.com/
 
+<img width="732" height="411" alt="image" src="https://github.com/user-attachments/assets/ee2a7c10-7c90-4da6-8986-d42625f2e9e8" />
+
+
 For more information on the chess-puzzle Hippodrome, visit: https://www.chessvariants.com/solitaire.dir/hippodrome.html
 
 The Hippodrome puzzle features:
